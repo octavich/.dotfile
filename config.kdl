@@ -1,0 +1,318 @@
+spawn-at-startup 		"waybar"
+spawn-at-startup 		"swww-daemon"
+spawn-at-startup 		"Pipewire"
+spawn-at-startup 		"swaync"
+spawn-at-startup 		"clipse" "-listen"
+//spawn-at-startup 		"clipse -listen"
+spawn-at-startup 		"/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-at-startup 		"kdeconnect-indicator"
+
+    binds {
+    Mod+E 			{ spawn "kitty"; }
+    Mod+Return 			{ spawn "kitty"; }
+    Mod+D hotkey-overlay-title="Run an Application: rofi" { spawn "sh" ".local/bin/appdrawer"; }
+    Mod+Shift+D			{ spawn "fuzzel"; }
+    Mod+V 			{ spawn "kitty" "--class" "clipse" "-e" "clipse";}
+    Mod+Shift+C 		{ spawn "hyprpicker" "-a" "$(wl-paste)"; }
+    Mod+P 			{ spawn-sh "/home/octavich/.config/niri/off.sh"; }
+
+    Mod+MouseForward  		{ toggle-windowed-fullscreen; }
+    Mod+MouseBack		{ switch-preset-column-width; }
+
+    XF86MonBrightnessUp 	{ spawn "brightnessctl" "-q" "set" "2%+"; }
+    XF86MonBrightnessDown 	{ spawn "brightnessctl" "-q" "set" "2%-"; }
+ //   XF86AudioNext 	    { spawn "brightnessctl" "-q" "set" "2%+"; }
+ //   XF86AudioPrev 	    { spawn "brightnessctl" "-q" "set" "2%-"; }
+    XF86AudioPlay 		{ spawn "playerctl" "play-pause"; }
+    XF86AudioNext 		{ spawn "playerctl" "next"; }
+    XF86AudioPrev 		{ spawn "playerctl" "previous"; }
+    XF86AudioMute 		{ spawn "playerctl" "play-pause"; }
+    XF86AudioRaiseVolume 	{ spawn "playerctl" "next"; }
+    XF86AudioLowerVolume 	{ spawn "playerctl" "previous"; }
+    Mod+Space 			{ spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    Mod+O 			{ spawn-sh "/home/octavich/.config/rofi/sc/sc.sh"; }
+    Mod+W			{ spawn-sh "~/.config/niri/pick.sh"; }
+    Mod+Shift+W			{ spawn "niri" "msg" "action" "clear-dynamic-cast-target"; }
+    Mod+Ctrl+W          	{ spawn "niri" "msg" "action" "set-dynamic-cast-monitor"; }
+
+    Mod+Shift+space 		{ toggle-window-floating; }
+    Mod+Q 		    { close-window; }
+    Mod+X 			{ toggle-overview; }
+
+    Mod+Left 			{ focus-column-left; }
+    Mod+Down 			{ focus-workspace-down; }
+    Mod+Up 			{ focus-workspace-up; }
+    Mod+Right 			{ focus-column-right; }
+    Mod+Shift+Down      	{ move-column-to-workspace-down; }
+    Mod+Shift+Up        	{ move-column-to-workspace-up; }
+    Mod+Shift+Left 		{ move-column-left; }
+    Mod+Shift+Right 		{ move-column-right; }
+
+    Mod+1 			{ focus-workspace 1; }
+    Mod+2 			{ focus-workspace 2; }
+    Mod+3 			{ focus-workspace 3; }
+    Mod+4 			{ focus-workspace 4; }
+    Mod+5 			{ focus-workspace 5; }
+    Mod+6 			{ focus-workspace 6; }
+    Mod+7 			{ focus-workspace 7; }
+    Mod+8 			{ focus-workspace 8; }
+
+    Mod+Shift+1 		{ move-column-to-workspace 1; }
+    Mod+Shift+2 		{ move-column-to-workspace 2; }
+    Mod+Shift+3 		{ move-column-to-workspace 3; }
+    Mod+Shift+4 		{ move-column-to-workspace 4; }
+    Mod+Shift+5 		{ move-column-to-workspace 5; }
+    Mod+Shift+6 		{ move-column-to-workspace 6; }
+    Mod+Shift+7 		{ move-column-to-workspace 7; }
+    Mod+Shift+8 		{ move-column-to-workspace 8; }
+
+    Mod+WheelScrollDown 	{ focus-column-right; }
+    Mod+WheelScrollUp 		{ focus-column-left; }
+    Mod+Shift+WheelScrollDown 	{ move-column-right; }
+    Mod+Shift+WheelScrollUp 	{ move-column-left; }
+
+    Mod+R 			{ switch-preset-column-width; }
+    Mod+Shift+F 		{ maximize-column; }
+    Mod+F 			{ fullscreen-window; }
+    Mod+C 			{ center-column; }
+
+    Mod+Ctrl+S 			{ spawn "flameshot" "gui"; }
+    Print 		      { screenshot; }
+    Alt+Print 			{ screenshot-window; }
+    Mod+Shift+P 		{ quit; }
+}
+
+    screenshot-path "~/Pictures/Screenshot/%d-%m-%y %H-%M-%S.png"
+
+window-rule {
+    		geometry-corner-radius 8
+    		clip-to-geometry true
+	}
+
+window-rule {
+    match is-window-cast-target=true
+    tab-indicator {
+        active-color "#f38ba8"
+        inactive-color "#7d0d2d"
+    }
+}
+
+environment {
+    XCURSOR_THEME "Bibata-Modern-Classic";
+    XCURSOR_SIZE "20";
+    QT_QPA_PLATFORM "wayland"
+   	QT_QPA_PLATFORMTHEME "qt6ct"
+    MOZ_ENABLE_WAYLAND "1"
+    XDG_SESSION_TYPE "wayland"
+    XDG_CURRENT_DESKTOP "niri"
+    XDG_SESSION_DESKTOP "niri"
+    MOZ_DBUS_REMOTE "1"
+    GDK_BACKEND "wayland"
+	}
+layout {
+    		gaps 6
+		center-focused-column "on-overflow"
+    		always-center-single-column
+		background-color "transparent"
+    shadow {
+        on
+
+        draw-behind-window true
+
+        softness 0
+        spread 0
+        offset x=8 y=8
+
+        color "#0006"
+        inactive-color "#0001"
+    }
+
+default-column-width {
+        	proportion 0.5
+}
+
+    focus-ring {
+	    off
+        width 1
+        active-color "#C2C3C5"
+        inactive-color "#505050"
+        urgent-color "#9b0000"
+
+    }
+
+    border {
+        width 2
+	active-color "#C2c3c5"
+        inactive-color "#505050"
+        urgent-color "#9b0000"
+
+    }
+
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+    preset-window-heights {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+}
+input {
+    keyboard {
+	   xkb {
+            layout "us,ru"
+            options "grp:caps_toggle"
+	}
+}
+
+mouse {
+		accel-speed -0.4
+        	accel-profile "flat"
+            scroll-method "two-finger"
+}
+touchpad {
+	off
+}
+focus-follows-mouse max-scroll-amount="0%"
+}
+
+cursor {
+	xcursor-theme "Bibata-Modern-Classic"
+  		xcursor-size 20
+    }
+
+output "DP-2" {
+    mode "1920x1080"
+  	focus-at-startup
+}
+
+output "DP-1" {
+		mode "1920x1080"
+}
+
+output "HDMI-A-2" {
+		mode "3840x2160"
+}
+
+
+layer-rule {
+    match namespace="waybar"
+    match at-startup=true
+    opacity 0.9999
+}
+layer-rule {
+    match namespace="swww-daemon"
+    place-within-backdrop true
+}
+
+hotkey-overlay {
+    		skip-at-startup
+}
+
+overview {
+    workspace-shadow {
+        off
+    }
+	 	zoom 0.25
+}
+prefer-no-csd
+gestures {
+    hot-corners {
+         off
+    }
+}
+clipboard {
+	disable-primary
+}
+
+animations {
+    slowdown 0.95
+
+    workspace-switch {
+        spring damping-ratio=1.15 stiffness=600 epsilon=0.0001
+    }
+
+    window-open {
+        curve "cubic-bezier" 0.05 0.9 0.1 1
+    }
+
+    window-close {
+        duration-ms 200
+        curve "ease-out-quad"
+    }
+
+    horizontal-view-movement {
+        spring damping-ratio=1.0 stiffness=600 epsilon=0.0001
+    }
+
+    window-movement {
+        spring damping-ratio=1.15 stiffness=600 epsilon=0.0001
+    }
+
+    window-resize {
+        spring damping-ratio=1.15 stiffness=600 epsilon=0.0001
+    }
+
+    config-notification-open-close {
+        spring damping-ratio=0.85 stiffness=700 epsilon=0.001
+    }
+
+    overview-open-close {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+}
+
+window-rule {
+    		match app-id="zen" title="^Картинка в картинке$"
+		match title="^Picture-in-Picture$"
+    		open-floating true
+    		default-floating-position x=32 y=32 relative-to="top-right"
+    		open-focused false
+	}
+
+window-rule {
+		match app-id="swaync-notification-window"
+		open-focused false
+		match is-focused=true
+	}
+
+window-rule{
+    		match app-id="zen$"
+		match app-id="discord"
+		match app-id="Spotify"
+    		open-maximized true
+	}
+
+window-rule {
+    		match app-id="org.gnome.Calculator"
+    		default-column-width { fixed 4; }
+    		default-window-height { fixed 4; }
+    		open-floating true
+	}
+window-rule {
+    		match app-id="thinkfan-ui"
+		match app-id="org.kde.kdeconnect.daemon"
+            	default-column-width { fixed 550; }
+    		default-window-height { fixed 300; }
+    		open-floating true
+	}
+workspace "1" {
+		open-on-output "DP-2"
+	}
+workspace "2" {
+		open-on-output "DP-2"
+	}
+workspace "3" {
+		open-on-output "DP-2"
+	}
+workspace "4" {
+		open-on-output "DP-2"
+	}
+workspace "5" {
+		open-on-output "DP-2"
+	}

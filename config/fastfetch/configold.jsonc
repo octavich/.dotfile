@@ -1,0 +1,91 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+
+  "logo": {
+        "source": "/home/whyoolw/.config/fastfetch/miku5.png",
+    	"height": 19,
+    "padding": {
+	    "top": 2,
+            "left": 3
+    }
+  },
+
+  "display": {
+    "bar": {
+      "width": 15
+    },
+    "percent": {
+      "type": 3,
+      "color": {
+        "green": "red",
+        "yellow": "red"
+      }
+    },
+    "key": {
+      "width": 22
+    },
+    "color": "white",
+    "separator": " -~> "
+  },
+
+  "modules": [
+    "break",
+
+    {
+      "type": "title",
+      "format": "{6}{7}{#yellow}{8}{#}"
+    },
+    "separator",
+    {
+      "type": "os",
+      "format": "{#blue}{4}{#} {?6}({#yellow}{6}{#}){?}"
+    },
+    {
+    "type": "host",
+    "format": "{family}"
+    },
+    "kernel",
+        {
+            "type": "packages"
+        },
+    "wm",
+    "shell",
+    "break",
+
+    {
+      "type": "cpu",
+      "format": "{name}"
+    },
+        {
+            "type": "gpu",
+            "format": "{name}"
+        },
+	    "break",
+    {
+      "type": "memory",
+      "key": "Ram",
+      "format": "{percentage-bar} {used} {#yellow}({percentage}) {#white}ddr4"
+    },
+    {
+      "type": "disk",
+      "format": "{size-percentage-bar} {size-used} {#yellow}({size-percentage}) {#white}{filesystem}"
+    },
+    "break",
+    "uptime",
+    {
+      "type": "datetime",
+      "timeout": 2000
+    },
+          	 {
+            "type": "command",
+            "key": "Time Life",
+            "text": "modify_install=$(stat -c %W /); current=$(date +%s); time_progression=$((current - modify_install)); days_difference=$((time_progression / 86400)); echo $days_difference days"
+        },
+    "break",
+            {
+            "type": "colors",
+            "symbol": "circle"
+        },
+	"break"
+  ]
+}
