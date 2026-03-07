@@ -18,6 +18,6 @@ end
 
 # Start
 if test -z $DISPLAY; and test (tty) = "/dev/tty1"
-    dbus-run-session  niri --session
+    exec niri-session
 end
 

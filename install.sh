@@ -22,33 +22,44 @@ else
 fi
 
 echo "==> Установка системных утилит и пакетов..."
-# Основные компоненты и утилиты
-PACKAGES=(
+# Разделение пакетов по категориям для удобства
+CORE=(
     niri
     waybar
     fish
     starship
-    kitty
-    ghostty
-    fuzzel
-    swaync
-    fastfetch
-    btop
-    nwg-look
-    pwvucontrol
+    polkit-gnome
     xdg-desktop-portal-gnome
     xdg-desktop-portal-gtk
+)
+UI=(
     swww
     matugen
+    nwg-look
+    swaync
+    fuzzel
     xsettingsd
+)
+TERMINAL=(
+    kitty
+    ghostty
+)
+FONTS=(
     ttf-jetbrains-mono-nerd
     noto-fonts
     noto-fonts-emoji
-    polkit-gnome
+)
+TOOLS=(
+    fastfetch
+    btop
+    pwvucontrol
     wl-clipboard
     brightnessctl
     playerctl
+    xdg-user-dirs
 )
+
+PACKAGES=("${CORE[@]}" "${UI[@]}" "${TERMINAL[@]}" "${FONTS[@]}" "${TOOLS[@]}")
 
 paru -S --needed --noconfirm "${PACKAGES[@]}"
 
@@ -98,6 +109,13 @@ for item in *; do
         fi
     fi
 done
+
+echo "==> Первичная настройка (шрифты, папки, темы)..."
+fc-cache -fv >/dev/null 2>&1 || true
+xdg-user-dirs-update || true
+
+echo "==> Настройка служб Systemd..."
+systemctl --user enable swaync.service || true
 
 echo "==> Настройка fish по умолчанию..."
 if [ "$SHELL" != "$(which fish)" ]; then
