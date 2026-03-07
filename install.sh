@@ -66,6 +66,8 @@ FONTS=(
 APPS=(
     loupe       # Современный просмотрщик изображений (GTK4)
     clapper     # Современный видеоплеер (GTK4/libadwaita)
+    nemo        # Отличный файловый менеджер
+    nemo-fileroller # Интеграция архивов (zip/tar) для Nemo
 )
 TOOLS=(
     fastfetch
