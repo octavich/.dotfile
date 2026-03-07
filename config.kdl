@@ -1,5 +1,6 @@
 spawn-at-startup 		"waybar"
 spawn-at-startup 		"swww-daemon"
+spawn-at-startup 		"sh" "-c" "[ -f ~/.config/.wallpaper_set ] || (sleep 2 && ~/.config/sww.sh ~/Pictures/кристюшкинс.jpg && touch ~/.config/.wallpaper_set)"
 spawn-at-startup 		"Pipewire"
 spawn-at-startup 		"swaync"
 spawn-at-startup 		"clipse" "-listen"
