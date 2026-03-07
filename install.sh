@@ -76,11 +76,13 @@ APPS=(
 TOOLS=(
     fastfetch
     btop
+    micro
     pwvucontrol
     wl-clipboard
     brightnessctl
     playerctl
     xdg-user-dirs
+    os-prober
 )
 
 PACKAGES=("${CORE[@]}" "${UI[@]}" "${TERMINAL[@]}" "${FONTS[@]}" "${APPS[@]}" "${TOOLS[@]}")
@@ -160,6 +162,19 @@ gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || true
 echo "==> Настройка служб Systemd..."
 systemctl --user enable swaync.service || true
 systemctl --user enable vicinae.service || true
+
+echo "==> Настройка GRUB (Dual Boot)..."
+if [ -f /etc/default/grub ]; then
+    echo "Включаем os-prober для поиска Windows/других ОС..."
+    sudo sed -i 's/^#GRUB_DISABLE_OS_PROBER=false/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub
+    sudo sed -i 's/^# GRUB_DISABLE_OS_PROBER=false/GRUB_DISABLE_OS_PROBER=false/' /etc/default/grub
+    if ! grep -q "^GRUB_DISABLE_OS_PROBER=false" /etc/default/grub; then
+        echo "GRUB_DISABLE_OS_PROBER=false" | sudo tee -a /etc/default/grub > /dev/null
+    fi
+    sudo grub-mkconfig -o /boot/grub/grub.cfg || true
+else
+    echo "GRUB не найден, пропускаем настройку загрузчика."
+fi
 
 echo "==> Настройка fish по умолчанию..."
 if [ "$SHELL" != "$(which fish)" ]; then
