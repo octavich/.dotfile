@@ -14,7 +14,7 @@ spawn-at-startup 		"kdeconnect-indicator"
     Mod+Shift+D			{ spawn "fuzzel"; }
     Mod+V 			{ spawn "kitty" "--class" "clipse" "-e" "clipse";}
     Mod+Shift+C 		{ spawn "hyprpicker" "-a" "$(wl-paste)"; }
-    Mod+P 			{ spawn-sh "/home/octavich/.config/niri/off.sh"; }
+    Mod+P 			{ spawn-sh "~/.config/niri/off.sh"; }
 
     Mod+MouseForward  		{ toggle-windowed-fullscreen; }
     Mod+MouseBack		{ switch-preset-column-width; }
@@ -30,7 +30,7 @@ spawn-at-startup 		"kdeconnect-indicator"
     XF86AudioRaiseVolume 	{ spawn "playerctl" "next"; }
     XF86AudioLowerVolume 	{ spawn "playerctl" "previous"; }
     Mod+Space 			{ spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
-    Mod+O 			{ spawn-sh "/home/octavich/.config/rofi/sc/sc.sh"; }
+    Mod+O 			{ spawn-sh "~/.config/rofi/sc/sc.sh"; }
     Mod+W			{ spawn-sh "~/.config/niri/pick.sh"; }
     Mod+Shift+W			{ spawn "niri" "msg" "action" "clear-dynamic-cast-target"; }
     Mod+Ctrl+W          	{ spawn "niri" "msg" "action" "set-dynamic-cast-monitor"; }

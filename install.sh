@@ -79,8 +79,23 @@ for item in *; do
             echo "Бэкап существующего ~/.config/$item в ~/.config/${item}.bak"
             mv "$HOME/.config/$item" "$HOME/.config/${item}.bak"
         fi
-        ln -sf "$DOTFILES_DIR/config/$item" "$HOME/.config/$item"
-        echo "Линковка $item -> ~/.config/$item"
+        
+        if [ "$item" = "gtk-3.0" ]; then
+            mkdir -p "$HOME/.config/gtk-3.0"
+            for gtk_item in "$DOTFILES_DIR/config/gtk-3.0/"*; do
+                gtk_file=$(basename "$gtk_item")
+                if [ "$gtk_file" = "bookmarks.template" ]; then
+                    sed "s|\$HOME|$HOME|g" "$gtk_item" > "$HOME/.config/gtk-3.0/bookmarks"
+                    echo "Сгенерировано bookmarks -> ~/.config/gtk-3.0/bookmarks"
+                else
+                    ln -sf "$gtk_item" "$HOME/.config/gtk-3.0/$gtk_file"
+                    echo "Линковка $gtk_file -> ~/.config/gtk-3.0/$gtk_file"
+                fi
+            done
+        else
+            ln -sf "$DOTFILES_DIR/config/$item" "$HOME/.config/$item"
+            echo "Линковка $item -> ~/.config/$item"
+        fi
     fi
 done
 

@@ -20,7 +20,7 @@ spawn-at-startup		"v2rayn"
     //Mod+V 				{ spawn "kitty" "--class" "clipse" "-e" "clipse";}
     Mod+V 					{ spawn "vicinae" "vicinae://extensions/vicinae/clipboard/history";}
     Mod+Shift+C 			{ spawn "hyprpicker" "-a" "$(wl-paste)"; }
-    Mod+P 					{ spawn-sh "/home/octavich/.config/niri/off.sh"; }
+    Mod+P 					{ spawn-sh "~/.config/niri/off.sh"; }
 
     Mod+MouseForward  		{ spawn "kitty"; }
     Mod+MouseBack			{ spawn "kitty"; }
@@ -35,7 +35,7 @@ spawn-at-startup		"v2rayn"
     XF86AudioLowerVolume 	{ spawn "playerctl" "previous"; }
     //XF86Launch7			{ spawn "kitty"; } //c
     Mod+Space 				{ spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
-    Mod+O 					{ spawn-sh "/home/octavich/.config/rofi/sc/sc.sh"; }
+    Mod+O 					{ spawn-sh "~/.config/rofi/sc/sc.sh"; }
     Mod+W					{ spawn-sh "~/.config/niri/pick.sh"; }
     Mod+Ctrl+W				{ spawn "niri" "msg" "action" "clear-dynamic-cast-target"; }
     Mod+Shift+W          	{ spawn "niri" "msg" "action" "set-dynamic-cast-monitor"; }
