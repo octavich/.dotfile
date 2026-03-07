@@ -3,7 +3,18 @@
 # Скрипт установки окружения (Niri + Waybar + Fish и системные утилиты)
 set -e
 
+# Защита от запуска от root (sudo)
+if [ "$EUID" -eq 0 ]; then
+    echo "❌ Ошибка: Пожалуйста, не запускайте этот скрипт от root (sudo)."
+    echo "Скрипт сам попросит пароль там, где это необходимо."
+    exit 1
+fi
+
 echo "==> Обновление системы..."
+# Запрашиваем sudo заранее и запускаем фоновый процесс для обновления таймера
+sudo -v
+while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+
 sudo pacman -Syu --noconfirm
 
 echo "==> Установка необходимых базовых пакетов..."
@@ -40,6 +51,9 @@ UI=(
     fuzzel
     vicinae-bin
     xsettingsd
+    adw-gtk-theme
+    papirus-icon-theme
+    bibata-cursor-theme-bin
 )
 TERMINAL=(
     kitty
@@ -113,6 +127,12 @@ done
 echo "==> Первичная настройка (шрифты, папки, темы)..."
 fc-cache -fv >/dev/null 2>&1 || true
 xdg-user-dirs-update || true
+
+echo "==> Применение GTK темы, иконок и курсора..."
+gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' || true
+gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' || true
+gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Classic' || true
+gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || true
 
 echo "==> Настройка служб Systemd..."
 systemctl --user enable swaync.service || true
