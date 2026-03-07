@@ -1,0 +1,344 @@
+ spawn-at-startup		"waybar"
+spawn-at-startup 		"swww-daemon"
+spawn-at-startup 		"Pipewire"
+//spawn-at-startup 		"swaync"
+//spawn-at-startup 		"clipse" "-listen"
+//spawn-at-startup 		"clipse -listen"
+spawn-at-startup 		"/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-at-startup 		"jams"
+spawn-at-startup		"xwaylannd-satellite"
+spawn-at-startup		"vicinae" "server"
+spawn-at-startup		"pw-metadata" "-n" "settings" "0" "clock.force-quantum 1024"
+spawn-at-startup		"v2rayn"
+
+    binds {
+    Mod+E 					{ spawn "kitty" "btop"; }
+    Mod+Return 				{ spawn "kitty"; }
+    //Mod+Shift+D				{ spawn "fuzzel"; }
+    Mod+D					{ spawn "vicinae" "toggle"; }
+	Mod+Shift+D 				{ spawn "rofi" "-show" "drun"; }
+    //Mod+V 				{ spawn "kitty" "--class" "clipse" "-e" "clipse";}
+    Mod+V 					{ spawn "vicinae" "vicinae://extensions/vicinae/clipboard/history";}
+    Mod+Shift+C 			{ spawn "hyprpicker" "-a" "$(wl-paste)"; }
+    Mod+P 					{ spawn-sh "/home/octavich/.config/niri/off.sh"; }
+
+    Mod+MouseForward  		{ spawn "kitty"; }
+    Mod+MouseBack			{ spawn "kitty"; }
+
+    XF86MonBrightnessUp 	{ spawn "brightnessctl" "-q" "set" "2%+"; }
+    XF86MonBrightnessDown 	{ spawn "brightnessctl" "-q" "set" "2%-"; }
+    XF86AudioPlay 			{ spawn "playerctl" "play-pause"; }
+    XF86AudioNext 			{ spawn "playerctl" "next"; }
+    XF86AudioPrev 			{ spawn "playerctl" "previous"; }
+    XF86AudioMute 			{ spawn "playerctl" "play-pause"; }
+    XF86AudioRaiseVolume 	{ spawn "playerctl" "next"; }
+    XF86AudioLowerVolume 	{ spawn "playerctl" "previous"; }
+    //XF86Launch7			{ spawn "kitty"; } //c
+    Mod+Space 				{ spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    Mod+O 					{ spawn-sh "/home/octavich/.config/rofi/sc/sc.sh"; }
+    Mod+W					{ spawn-sh "~/.config/niri/pick.sh"; }
+    Mod+Ctrl+W				{ spawn "niri" "msg" "action" "clear-dynamic-cast-target"; }
+    Mod+Shift+W          	{ spawn "niri" "msg" "action" "set-dynamic-cast-monitor"; }
+
+
+    Mod+Shift+space 		{ toggle-window-floating; }
+    Mod+Q 					{ close-window; }
+    Mod+X					{ toggle-overview; }
+
+    Mod+left 				{ focus-column-left; }
+    Mod+down 				{ focus-workspace-down; }
+    Mod+up 					{ focus-workspace-up; }
+    Mod+right 				{ focus-column-right; }
+    Mod+Shift+left 			{ move-column-left; }
+    Mod+Shift+down			{ move-column-to-workspace-down; }
+    Mod+Shift+up			{ move-column-to-workspace-up; }
+    Mod+Shift+right			{ move-column-right; }
+
+    Mod+1 					{ focus-workspace 1; }
+    Mod+2 					{ focus-workspace 2; }
+    Mod+3 					{ focus-workspace 3; }
+    Mod+4 					{ focus-workspace 4; }
+    Mod+5 					{ focus-workspace 5; }
+    Mod+6 					{ focus-workspace 6; }
+    Mod+7 					{ focus-workspace 7; }
+    Mod+8 					{ focus-workspace 8; }
+
+    Mod+Shift+1 		{ move-column-to-workspace 1; }
+    Mod+Shift+2 		{ move-column-to-workspace 2; }
+    Mod+Shift+3 		{ move-column-to-workspace 3; }
+    Mod+Shift+4 		{ move-column-to-workspace 4; }
+    Mod+Shift+5 		{ move-column-to-workspace 5; }
+    Mod+Shift+6 		{ move-column-to-workspace 6; }
+    Mod+Shift+7 		{ move-column-to-workspace 7; }
+    Mod+Shift+8 		{ move-column-to-workspace 8; }
+
+    Mod+WheelScrollDown 	{ focus-column-right; }
+    Mod+WheelScrollUp 		{ focus-column-left; }
+    Mod+Shift+WheelScrollDown 	{ move-column-right; }
+    Mod+Shift+WheelScrollUp 	{ move-column-left; }
+
+    Mod+R 			{ switch-preset-column-width; }
+    Mod+Shift+F 	{ maximize-column; }
+    Mod+F 			{ fullscreen-window; }
+    Mod+C 			{ center-column; }
+
+    Mod+Ctrl+S 			{ spawn "flameshot" "gui"; }
+    Mod+Shift+S 		{ screenshot; }
+    Alt+Print 			{ screenshot-window; }
+    Alt+Shift+4			{ screenshot; }
+    Alt+Shift+3			{ screenshot-screen; }
+    Mod+Shift+P 		{ quit; }
+}
+
+    screenshot-path "~/Pictures/Screenshot/%d-%m-%y %H-%M-%S.png"
+
+
+
+window-rule {
+    	match is-window-cast-target=true
+    	tab-indicator {
+        active-color "#f38ba8"
+        inactive-color "#7d0d2d"
+    }
+}
+
+environment {
+    		//QT_STYLE_OVERRIDE "Adwaita-Dark"
+        XCURSOR_THEME "Bibata-Modern-Classic"
+        XCURSOR_SIZE "24"
+	    QT_QPA_PLATFORM "wayland"
+	    QT_QPA_PLATFORMTHEME "qt6ct"
+    	MOZ_ENABLE_WAYLAND "1"
+    	XDG_SESSION_TYPE "wayland"
+    	XDG_CURRENT_DESKTOP "gnome"
+    	XDG_SESSION_DESKTOP "gnome"
+    	OZ_DBUS_REMOTE "1"
+    	GDK_BACKEND "wayland"
+	    DISPLAY ":0"
+	}
+
+window-rule {
+    	geometry-corner-radius 12
+    	clip-to-geometry true
+	}
+
+layout {
+    	gaps 8
+		center-focused-column "on-overflow"
+    	always-center-single-column
+		background-color "transparent"
+
+  struts {
+
+        left 6
+        right 6
+        top 6
+        bottom 6
+    }
+
+
+
+shadow {
+
+        draw-behind-window true
+        softness 0
+        spread 0
+        offset x=8 y=8
+		color "#222426"
+        //inactive-color "#111111"
+    }
+
+default-column-width {
+        proportion 0.5
+}
+
+focus-ring {
+	off
+        width 0
+        active-color "#595959"
+        inactive-color "#505050"
+        urgent-color "#9b0000"
+
+    }
+
+preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+preset-window-heights {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+}
+input {
+    keyboard {
+	   xkb {
+            layout "us,ru"
+            options "grp:caps_toggle"
+	}
+}
+
+mouse {
+		accel-speed -0.4
+        	accel-profile "flat"
+}
+touchpad {
+	off
+	tap
+natural-scroll
+}
+focus-follows-mouse max-scroll-amount="0%"
+}
+
+	cursor {
+		xcursor-theme "Bibata-Modern-Classic"
+    		xcursor-size 24
+	    }
+
+output "DP-2" {
+	mode "1920x1080"
+	focus-at-startup
+}
+
+output "DP-1" {
+		mode "1920x1080"
+}
+
+layer-rule {
+    match namespace="waybar"
+    match at-startup=true
+    opacity 0.9999
+}
+
+layer-rule {
+    match namespace="swww-daemon"
+    place-within-backdrop true
+}
+
+hotkey-overlay {
+    		skip-at-startup
+}
+
+overview {
+	    workspace-shadow {
+        off
+}
+	 	zoom 0.25
+}
+prefer-no-csd
+gestures {
+    hot-corners {
+         off
+    }
+}
+clipboard {
+	disable-primary
+}
+
+animations {
+    slowdown 0.95
+
+    workspace-switch {
+        spring damping-ratio=1.15 stiffness=600 epsilon=0.0001
+    }
+
+    window-open {
+        curve "cubic-bezier" 0.05 0.9 0.1 1
+    }
+
+    window-close {
+        duration-ms 200
+        curve "ease-out-quad"
+    }
+
+    horizontal-view-movement {
+        spring damping-ratio=1.0 stiffness=600 epsilon=0.0001
+    }
+
+    window-movement {
+        spring damping-ratio=1.15 stiffness=600 epsilon=0.0001
+    }
+
+    window-resize {
+        spring damping-ratio=1.15 stiffness=600 epsilon=0.0001
+    }
+
+    config-notification-open-close {
+        spring damping-ratio=0.85 stiffness=700 epsilon=0.001
+    }
+
+    overview-open-close {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+}
+
+window-rule {
+    	match app-id="zen" title="^Картинка в картинке$"
+		match title="^Picture-in-Picture$"
+    	open-floating true
+    	default-floating-position x=32 y=32 relative-to="top-right"
+    	open-focused false
+	}
+window-rule {
+		match app-id="io.github.kukuruzka165.materialgram"
+		 open-on-workspace "2"
+}
+window-rule {
+		match app-id="swaync-notification-window"
+		open-focused false
+		match is-focused=true
+	}
+window-rule {
+    match app-id="gsr-ui"
+	open-focused true
+}
+window-rule{
+    	match app-id="zen$"
+		match app-id="discod"
+		match app-id="equibop"
+		match app-id="Spotify"
+    	open-maximized true
+	}
+
+window-rule {
+    		match app-id="org.gnome.Calculator"
+    		default-column-width { fixed 4; }
+    		default-window-height { fixed 4; }
+    		open-floating true
+	}
+
+window-rule {
+		match app-id="org.gnome.NautilusPreviewer"
+		open-floating true
+}
+window-rule {
+    		match app-id="thinkfan-ui"
+		match app-id="org.kde.kdeconnect.daemon"
+            	default-column-width { fixed 550; }
+    		default-window-height { fixed 300; }
+    		open-floating true
+	}
+
+
+workspace "1" {
+		open-on-output "DP-1"
+	}
+workspace "2" {
+		open-on-output "DP-1"
+	}
+workspace "3" {
+		open-on-output "DP-1"
+	}
+workspace "4" {
+		open-on-output "DP-1"
+	}
+workspace "5" {
+		open-on-output "DP-1"
+	}
+
+debug {
+   //render-drm-device "/dev/dri/renderD128"	//nvidia only
+    //render-drm-device "/dev/dri/renderD129"	//intel+nvidia
+}

@@ -1,0 +1,48 @@
+{
+    "control-center-height": 620,
+    "control-center-width": 500,
+    "notification-limit": 2,
+    "control-center-layer": "overlay",
+    "control-center-margin-top": 0,
+    "control-center-margin-left": 0,
+    "control-center-margin-right": 0,
+    "control-center-margin-top": 0,
+
+    "control-center-positionX": "right",
+    "control-center-positionY": "top",
+    "fit-to-screen": false,
+    "hide-on-action": false,
+    "image-visibility": "when-available",
+    "keyboard-shortcuts": true,
+    "notification-icon-size": 24,
+    "notification-inline-replies": false,
+    "notification-window-width": 400,
+    "notification-margin-bottom": 100,
+    "notification-margin-left": 0,
+    "control-center-margin-right": 0,
+    "control-center-margin-top": 0,
+
+    "positionX": "riggt",
+    "positionY": "top",
+    "timeout": 1,
+    "timeout-critical": 0,
+    "timeout-low": 5,
+    "transition-time": 200,
+    "widget-config": {
+
+        "mpris": {
+            "image-radius": 24,
+            "image-size": 64,
+            "blacklist": ["playerctld"]
+        },
+
+        "title": {
+            "text": "Notifications",
+            "button-text": "Clear",
+            "clear-all-button": true
+        }
+    },
+    "widgets": ["dnd", "title", "notifications", "mpris"]
+
+
+}

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Viewer</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
+    }
+    #colors {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .card {
+      background: #1c1c1c;
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .swatch {
+      height: 60px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+    input[type="file"] {
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Local JSON Color Viewer</h1>
+  <p>Выбери JSON файл со списком цветов.</p>
+  <input type="file" id="fileInput" accept="application/json" />
+
+  <div id="colors"></div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const container = document.getElementById('colors');
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const text = await file.text();
+      let data;
+
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        alert('Ошибка: не удалось прочитать JSON');
+        return;
+      }
+
+      container.innerHTML = '';
+      Object.entries(data).forEach(([name, hex]) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const swatch = document.createElement('div');
+        swatch.className = 'swatch';
+        swatch.style.background = hex;
+
+        const label = document.createElement('div');
+        label.textContent = name;
+
+        const code = document.createElement('div');
+        code.textContent = hex;
+        code.style.fontFamily = 'monospace';
+
+        card.appendChild(swatch);
+        card.appendChild(label);
+        card.appendChild(code);
+        container.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>
+

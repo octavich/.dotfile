@@ -1,0 +1,81 @@
+{
+  "display": {
+    "color": {
+      "keys": "magenta"
+    },
+    "separator": " ",
+    "size": {
+      "maxPrefix": "GB",
+      "ndigits": 0
+    }
+  },
+  "logo": {
+    "padding": {
+      "left": 1,
+      "top": 1
+    },
+    "source": "~/.config/fastfetch/ascii/tree.txt"
+  },
+  "modules": [
+    "break",
+    {
+      "color": {
+        "at": "red",
+        "host": "blue",
+        "user": "green"
+      },
+      "type": "title"
+    },
+    {
+      "format": "{pretty-name}",
+      "key": "󰜗",
+      "type": "os"
+    },
+    {
+      "format": "Hatsune Miku",
+      "key": "󰒕",
+      "type": "os"
+    },
+    {
+      "format": "{pacman}p {flatpak-system}f",
+      "key": "",
+      "type": "packages"
+    },
+    {
+      "format": "{pretty-name}",
+      "key": "󰜗",
+      "type": "wm"
+    },
+    {
+      "format": "{pretty-name}",
+      "key": "",
+      "type": "terminal"
+    },
+    {
+      "format": "{name} {battery-percentage}",
+      "key": "",
+      "type": "bluetooth"
+    },
+    {
+      "format": "{size-used}/{size-total} - {size-percentage}",
+      "key": "",
+      "type": "disk"
+    },
+    {
+      "format": "{formatted}",
+      "key": "",
+      "type": "uptime"
+    },
+    {
+      "key": "󰃭",
+      "text": "modify_install=$(stat -c %W /)\ncurrent=$(date +%s)\ntime_progression=$((current - modify_install))\ndays_difference=$((time_progression / 86400))\necho $days_difference days\n",
+      "type": "command"
+    },
+    {
+      "key": "󰌁",
+      "symbol": "circle",
+      "type": "colors"
+    }
+  ]
+}
+

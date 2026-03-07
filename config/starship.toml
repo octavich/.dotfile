@@ -1,0 +1,44 @@
+# ~/.config/starship.toml
+
+add_newline = false
+
+format = """
+╭──$directory$git_branch$git_status$cmd_duration
+╰─$character"""
+
+[character]
+success_symbol = "[](bold blue)"
+error_symbol = "[](bold red)"
+
+[os]
+format = "[$symbol ](white)"
+disabled = true
+
+[os.symbols]
+NixOS = "󱄅 "
+Arch = " "
+Gentoo = " "
+Linux = " "
+Macos = " "
+
+[directory]
+format = "[ $path](bold blue)"
+truncation_length = 4
+read_only = " 󰌾 "
+read_only_style = "red"
+
+[directory.substitutions]
+"~" = "~"
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+"Games" = " "
+"Videos" = " "
+
+[git_branch]
+format = "[ $symbol$branch](purple) "
+symbol = " "
+
+[cmd_duration]
+format = "[  $duration](yellow) "
