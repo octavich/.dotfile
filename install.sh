@@ -68,6 +68,10 @@ APPS=(
     clapper     # Современный видеоплеер (GTK4/libadwaita)
     nemo        # Отличный файловый менеджер
     nemo-fileroller # Интеграция архивов (zip/tar) для Nemo
+    gst-plugins-good # Кодеки для аудио/видео
+    gst-plugins-bad
+    gst-plugins-ugly
+    gst-libav
 )
 TOOLS=(
     fastfetch
