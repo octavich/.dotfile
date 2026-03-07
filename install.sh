@@ -63,6 +63,10 @@ FONTS=(
     noto-fonts
     noto-fonts-emoji
 )
+APPS=(
+    loupe       # Современный просмотрщик изображений (GTK4)
+    clapper     # Современный видеоплеер (GTK4/libadwaita)
+)
 TOOLS=(
     fastfetch
     btop
@@ -73,7 +77,7 @@ TOOLS=(
     xdg-user-dirs
 )
 
-PACKAGES=("${CORE[@]}" "${UI[@]}" "${TERMINAL[@]}" "${FONTS[@]}" "${TOOLS[@]}")
+PACKAGES=("${CORE[@]}" "${UI[@]}" "${TERMINAL[@]}" "${FONTS[@]}" "${APPS[@]}" "${TOOLS[@]}")
 
 paru -S --needed --noconfirm "${PACKAGES[@]}"
 
