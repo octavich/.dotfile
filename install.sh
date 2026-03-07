@@ -38,6 +38,7 @@ UI=(
     nwg-look
     swaync
     fuzzel
+    vicinae-bin
     xsettingsd
 )
 TERMINAL=(
@@ -116,6 +117,7 @@ xdg-user-dirs-update || true
 
 echo "==> Настройка служб Systemd..."
 systemctl --user enable swaync.service || true
+systemctl --user enable vicinae.service || true
 
 echo "==> Настройка fish по умолчанию..."
 if [ "$SHELL" != "$(which fish)" ]; then
