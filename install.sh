@@ -43,7 +43,6 @@ UI=(
 )
 TERMINAL=(
     kitty
-    ghostty
 )
 FONTS=(
     ttf-jetbrains-mono-nerd
