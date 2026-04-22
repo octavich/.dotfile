@@ -77,7 +77,7 @@ TOOLS=(
     fastfetch
     btop
     micro
-    pwvucontrol
+    pavucontrol
     wl-clipboard
     brightnessctl
     playerctl
