@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONFIG_FILE="/home/whyoolw/.config/niri/config.kdl"
+CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
 TMP_FILE="${CONFIG_FILE}.tmp"
 
 # Считываем текущий статус eDP-1

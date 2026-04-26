@@ -1,7 +1,7 @@
 spawn-at-startup 		"waybar"
 spawn-at-startup 		"swww-daemon"
 spawn-at-startup 		"sh" "-c" "[ -f ~/.config/.wallpaper_set ] || (sleep 2 && ~/.config/sww.sh ~/Pictures/кристюшкинс.jpg && touch ~/.config/.wallpaper_set)"
-spawn-at-startup 		"Pipewire"
+spawn-at-startup 		"sh" "-lc" "dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE; systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE"
 spawn-at-startup 		"swaync"
 spawn-at-startup 		"clipse" "-listen"
 //spawn-at-startup 		"clipse -listen"
@@ -101,14 +101,14 @@ window-rule {
 environment {
     XCURSOR_THEME "Bibata-Modern-Classic";
     XCURSOR_SIZE "20";
-    QT_QPA_PLATFORM "wayland"
+    QT_QPA_PLATFORM "wayland;xcb"
    	QT_QPA_PLATFORMTHEME "qt6ct"
     MOZ_ENABLE_WAYLAND "1"
     XDG_SESSION_TYPE "wayland"
     XDG_CURRENT_DESKTOP "niri"
     XDG_SESSION_DESKTOP "niri"
     MOZ_DBUS_REMOTE "1"
-    GDK_BACKEND "wayland"
+    GDK_BACKEND "wayland,x11"
 	}
 layout {
     		gaps 6

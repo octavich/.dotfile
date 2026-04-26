@@ -6,9 +6,9 @@ case "$choice" in
     "Window")
         niri msg action set-dynamic-cast-window --id "$(niri msg --json pick-window | jq .id)"
         ;;
-	"Fake-Full")
-	niri msg action toggle-windowed-fullscreen --id $(niri msg --json pick-window | jq .id)
-	;;
+    "Fake-Full")
+        niri msg action toggle-windowed-fullscreen --id "$(niri msg --json pick-window | jq .id)"
+        ;;
     "Monitor")
         niri msg action set-dynamic-cast-monitor
         ;;

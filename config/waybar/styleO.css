@@ -11,9 +11,7 @@ window#waybar {
 	transition-duration: .5s;
 }
 
-@import "/home/whyoolw/.config/waybar/colors.css";
-/*@import "/home/whyoolw/.cache/wal/colors-waybar.css";
- */
+@import "colors.css";
 #workspaces {
 	font-size: 11pt;
 		padding: 0 0 0 0;

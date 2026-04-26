@@ -1,4 +1,4 @@
-@import "/home/whyoolw/.cache/wal/colors-waybar.css";
+@import "../waybar/colors.css";
 
 @define-color noti-border-color @color2;
 @define-color noti-close-bg @color10;
