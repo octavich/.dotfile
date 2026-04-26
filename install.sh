@@ -309,6 +309,12 @@ install_aur_packages() {
 }
 
 install_swww_from_github() {
+    if [ -x /usr/local/bin/swww ] && [ -x /usr/local/bin/swww-daemon ]; then
+        log_info "swww and swww-daemon are already installed in /usr/local/bin; skipping source build"
+        installed_successfully+=("source:swww-present")
+        return 0
+    fi
+
     log_info "Installing swww from GitHub source: $SWWW_REPO_URL ($SWWW_VERSION)"
 
     local build_root
