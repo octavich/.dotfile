@@ -53,6 +53,14 @@ bindings change. Use `pavucontrol` as the stable fallback.
 INSTALL_OPTIONAL_AUR=1 ./install.sh
 ```
 
+AUR package review stays enabled by default. The installer exports
+`EDITOR=micro` and `VISUAL=micro` so `paru` does not drop you into vim. If you
+explicitly want non-interactive AUR installs:
+
+```bash
+AUR_SKIP_REVIEW=1 ./install.sh
+```
+
 NVIDIA is auto-detected. Modern GPUs use `nvidia-open` by default:
 
 ```bash
@@ -79,10 +87,13 @@ The default login flow is greetd + tuigreet:
 
 1. Boot to `graphical.target`.
 2. greetd starts tuigreet on `tty1`.
-3. tuigreet starts `niri-session`.
+3. tuigreet starts `/usr/local/bin/dotfile-niri-session`.
+4. the wrapper executes `niri-session`.
 
 The installer writes `/etc/greetd/config.toml` directly and enables
-`greetd.service`.
+`greetd.service`. It intentionally does not use `tuigreet --remember-session`,
+because remembered session choices can override the configured `--cmd` and
+start the wrong niri entry.
 
 TTY mode remains available with `--session=tty`:
 
@@ -203,10 +214,10 @@ running.
 
 ## XWayland
 
-The config starts `xwayland-satellite` for X11-only GUI applications such as
-Avalonia-based tools. The installer installs `xwayland-satellite` from official
-repos when available, otherwise from AUR as a required package because the niri
-config starts it.
+The installer installs `xwayland-satellite` for X11-only GUI applications such
+as Avalonia-based tools. Modern niri integrates with `xwayland-satellite`
+automatically when it is available in `PATH`, so the config does not fake
+`DISPLAY` and does not start a duplicate `xwayland-satellite` process manually.
 
 The config does not fake `DISPLAY=:0`. Check the real environment:
 
@@ -223,6 +234,14 @@ does not ship a GTK4 `gtk.css` that imports Adwaita resource files. Those
 imports are not stable across GTK/libadwaita versions and can break
 applications.
 
+The installer does not apply GNOME `gsettings` by default, because this setup is
+a niri session and global GTK/XSettings overrides can break launcher visuals. If
+you explicitly want those settings:
+
+```bash
+APPLY_GSETTINGS=1 ./install.sh
+```
+
 ## Troubleshooting
 
 If niri does not start from `tty1`:
@@ -237,6 +256,21 @@ Set fish as the login shell if needed:
 
 ```bash
 chsh -s "$(command -v fish)"
+```
+
+If greetd/tuigreet accepts the password but opens a black niri screen, verify
+that tuigreet is not using an old remembered session:
+
+```bash
+sudo cat /etc/greetd/config.toml
+sudo rm -f /var/cache/tuigreet/*session*
+sudo systemctl restart greetd.service
+```
+
+The expected command is:
+
+```toml
+command = "tuigreet --time --asterisks --remember --cmd /usr/local/bin/dotfile-niri-session"
 ```
 
 If PipeWire is not active:

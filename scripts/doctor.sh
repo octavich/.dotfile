@@ -139,6 +139,41 @@ check_xwayland() {
     fi
 }
 
+check_greetd() {
+    if ! command_exists systemctl; then
+        fail "systemctl is missing"
+        return
+    fi
+
+    if ! systemctl is-enabled --quiet greetd.service 2>/dev/null; then
+        warn "greetd.service is not enabled"
+        return
+    fi
+
+    if [ -x /usr/local/bin/dotfile-niri-session ]; then
+        pass "greetd niri wrapper is executable"
+    else
+        fail "missing executable greetd niri wrapper: /usr/local/bin/dotfile-niri-session"
+    fi
+
+    if [ ! -r /etc/greetd/config.toml ]; then
+        fail "missing readable greetd config: /etc/greetd/config.toml"
+        return
+    fi
+
+    if grep -q -- '--remember-session' /etc/greetd/config.toml; then
+        fail "greetd config still uses --remember-session"
+    else
+        pass "greetd config does not use --remember-session"
+    fi
+
+    if grep -q '/usr/local/bin/dotfile-niri-session' /etc/greetd/config.toml; then
+        pass "greetd config starts dotfile niri wrapper"
+    else
+        fail "greetd config does not start /usr/local/bin/dotfile-niri-session"
+    fi
+}
+
 has_nvidia_gpu() {
     if command_exists lspci && lspci | grep -Ei 'nvidia|3d controller|vga' | grep -qi nvidia; then
         return 0
@@ -182,6 +217,7 @@ main() {
     check_pipewire
     check_portals
     check_xwayland
+    check_greetd
     check_nvidia
 
     printf '\nDoctor summary\n'

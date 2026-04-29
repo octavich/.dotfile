@@ -5,9 +5,11 @@ end
 
 
 set -g fish_greeting
+set -gx EDITOR micro
+set -gx VISUAL micro
 
 if status is-interactive
-    if status is-login; and command -q fastfetch; and test -z "$FASTFETCH_DISABLE"; and test "$TERM" != dumb
+    if command -q fastfetch; and test -z "$FASTFETCH_DISABLE"; and test "$TERM" != dumb
         fastfetch
     end
 

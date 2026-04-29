@@ -6,12 +6,11 @@ version_check = false
 input_path = '~/.config/matugen/templates/fuzzel/fuzzel_theme.ini'
 output_path = '~/.config/fuzzel/fuzzel_theme.ini'
 
-[templates.gtk3] 
+[templates.gtk3]
 input_path = '~/.config/matugen/templates/gtk/gtk-colors.css'
-output_path = '~/.config/gtk-3.0/colors.css' 
-post_hook = 'gsettings set org.gnome.desktop.interface gtk-theme ""; gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark' 
+output_path = '~/.config/gtk-3.0/colors.css'
 
-[templates.gtk4] 
+[templates.gtk4]
 input_path = '~/.config/matugen/templates/gtk4/gtk-colors.css'
 output_path = '~/.config/gtk-4.0/colors.css'
 
@@ -23,8 +22,3 @@ post_hook = '~/.config/apply-theme.sh'
 [templates.vesktop]
 input_path = '~/.config/matugen/templates/discord/midnight-discord.css'
 output_path = '~/.config/Equicord/themes/midnight-discord.css'
-
-[templates.vicinae]
-input_path = '~/.config/matugen/templates/vicinae.toml'
-output_path = '~/.local/share/vicinae/themes/my-new-theme.toml'
-post_hook = 'systemctl --user restart vicinae.service '

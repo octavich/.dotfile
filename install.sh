@@ -8,11 +8,14 @@ DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfile}"
 SWWW_REPO_URL="${SWWW_REPO_URL:-https://github.com/LGFae/swww.git}"
 SWWW_VERSION="${SWWW_VERSION:-v0.11.2}"
 INSTALL_OPTIONAL_AUR="${INSTALL_OPTIONAL_AUR:-0}"
+AUR_SKIP_REVIEW="${AUR_SKIP_REVIEW:-0}"
 NVIDIA_MODE="${NVIDIA_MODE:-auto}"
 NVIDIA_DRIVER="${NVIDIA_DRIVER:-open}"
 SESSION_MODE="${SESSION_MODE:-greetd}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
 SUDO_KEEPALIVE_PID=""
+export EDITOR="${EDITOR:-micro}"
+export VISUAL="${VISUAL:-micro}"
 
 installed_successfully=()
 skipped_optional=()
@@ -37,6 +40,7 @@ Options:
 
 Environment:
   INSTALL_OPTIONAL_AUR=1
+  AUR_SKIP_REVIEW=1
   NVIDIA_MODE=auto|yes|no
   NVIDIA_DRIVER=open|proprietary
   SESSION_MODE=greetd|tty
@@ -133,6 +137,11 @@ fi
 
 if [ "$SESSION_MODE" != "greetd" ] && [ "$SESSION_MODE" != "tty" ]; then
     log_error "SESSION_MODE must be greetd or tty."
+    exit 1
+fi
+
+if [ "$AUR_SKIP_REVIEW" != "0" ] && [ "$AUR_SKIP_REVIEW" != "1" ]; then
+    log_error "AUR_SKIP_REVIEW must be 0 or 1."
     exit 1
 fi
 
@@ -272,6 +281,16 @@ ensure_paru() {
     rm -rf "$build_root"
 }
 
+paru_args() {
+    local args=(-S --needed --noconfirm)
+
+    if [ "$AUR_SKIP_REVIEW" = "1" ]; then
+        args+=(--skipreview)
+    fi
+
+    printf '%s\n' "${args[@]}"
+}
+
 install_aur_packages() {
     local package_scope=$1
     shift
@@ -295,8 +314,11 @@ install_aur_packages() {
 
     local package_name
     for package_name in "$@"; do
+        local args
+        mapfile -t args < <(paru_args)
+
         log_info "Installing AUR package: $package_name"
-        if paru -S --needed --noconfirm "$package_name"; then
+        if EDITOR=micro VISUAL=micro paru "${args[@]}" "$package_name"; then
             record_package_result "aur" "$package_name" "success"
         elif [ "$package_scope" = "required" ]; then
             log_error "Failed to install required AUR package: $package_name"
@@ -433,6 +455,45 @@ enable_multilib() {
     fi
 }
 
+install_greetd_niri_session_wrapper() {
+    local tmp_script
+    tmp_script=$(mktemp)
+
+    cat > "$tmp_script" <<'EOF'
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+export XDG_CURRENT_DESKTOP=niri
+export XDG_SESSION_DESKTOP=niri
+export XDG_SESSION_TYPE=wayland
+unset DISPLAY
+
+if command -v systemd-cat >/dev/null 2>&1; then
+    exec systemd-cat --identifier=dotfile-niri-session niri-session
+fi
+
+exec niri-session
+EOF
+
+    sudo install -D -m 0755 "$tmp_script" /usr/local/bin/dotfile-niri-session
+    rm -f "$tmp_script"
+    installed_successfully+=("config:/usr/local/bin/dotfile-niri-session")
+}
+
+clear_tuigreet_session_cache() {
+    if [ ! -d /var/cache/tuigreet ]; then
+        return 0
+    fi
+
+    if sudo find /var/cache/tuigreet -mindepth 1 -maxdepth 1 -type f -name '*session*' -delete; then
+        installed_successfully+=("config:/var/cache/tuigreet session cache cleared")
+    else
+        log_warn "Failed to clear tuigreet session cache."
+        failed_optional+=("config:tuigreet-session-cache")
+    fi
+}
+
 configure_greetd_session() {
     log_info "Configuring greetd + tuigreet"
 
@@ -441,6 +502,9 @@ configure_greetd_session() {
         return 0
     fi
 
+    install_greetd_niri_session_wrapper
+    clear_tuigreet_session_cache
+
     local tmp_config
     tmp_config=$(mktemp)
     cat > "$tmp_config" <<'EOF'
@@ -448,7 +512,7 @@ configure_greetd_session() {
 vt = 1
 
 [default_session]
-command = "tuigreet --time --asterisks --remember --remember-session --sessions /usr/share/wayland-sessions --cmd niri-session"
+command = "tuigreet --time --asterisks --remember --cmd /usr/local/bin/dotfile-niri-session"
 user = "greeter"
 EOF
 
@@ -469,7 +533,7 @@ EOF
         failed_optional+=("systemd:graphical.target")
     fi
 
-    post_install_notes+=("Reboot; greetd/tuigreet will offer niri-session as the default session.")
+    post_install_notes+=("Reboot; greetd/tuigreet will start /usr/local/bin/dotfile-niri-session.")
 }
 
 configure_tty_session() {
@@ -655,11 +719,17 @@ setup_symlinks() {
         local item_name
         item_name=$(basename "$item_path")
 
-        if [ "$item_name" = "gtk-3.0" ]; then
-            setup_gtk3_config
-        else
-            link_path "$item_path" "$HOME/.config/$item_name"
-        fi
+        case "$item_name" in
+            gtk-3.0)
+                setup_gtk3_config
+                ;;
+            xsettingsd)
+                remove_path_for_replace "$HOME/.config/xsettingsd"
+                ;;
+            *)
+                link_path "$item_path" "$HOME/.config/$item_name"
+                ;;
+        esac
     done
 }
 
@@ -751,8 +821,6 @@ official_required_packages=(
     nwg-look
     swaync
     fuzzel
-    xsettingsd
-    adw-gtk-theme
     papirus-icon-theme
     ttf-jetbrains-mono-nerd
     noto-fonts
@@ -877,6 +945,8 @@ else
     failed_required+=("config:dotfiles-config-directory")
 fi
 
+remove_path_for_replace "$HOME/.local/share/vicinae/themes/my-new-theme.toml"
+
 log_info "Running post-install setup"
 fc-cache -fv >/dev/null 2>&1 || log_warn "fc-cache failed."
 xdg-user-dirs-update || log_warn "xdg-user-dirs-update failed."
@@ -890,10 +960,13 @@ if [ -f "$wallpaper_path" ]; then
     "$HOME/.config/apply-theme.sh" || log_warn "apply-theme.sh failed."
 fi
 
-gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' || log_warn "Failed to set GTK theme."
-gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' || log_warn "Failed to set icon theme."
-gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Classic' || log_warn "Failed to set cursor theme."
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || log_warn "Failed to set color scheme."
+if [ "${APPLY_GSETTINGS:-0}" = "1" ]; then
+    gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' || log_warn "Failed to set icon theme."
+    gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Classic' || log_warn "Failed to set cursor theme."
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || log_warn "Failed to set color scheme."
+else
+    post_install_notes+=("Skipped GNOME gsettings; set APPLY_GSETTINGS=1 if you explicitly want them.")
+fi
 
 enable_user_services pipewire.service pipewire-pulse.service wireplumber.service
 enable_user_services swaync.service vicinae.service
@@ -910,7 +983,7 @@ if command_exists fish && [ "${SHELL:-}" != "$(command -v fish)" ]; then
 fi
 
 if [ "$SESSION_MODE" = "greetd" ]; then
-    post_install_notes+=("Reboot into greetd/tuigreet and select niri-session if it is not selected automatically.")
+    post_install_notes+=("Reboot into greetd/tuigreet; it will start /usr/local/bin/dotfile-niri-session.")
 else
     post_install_notes+=("Log into tty1; fish will exec niri-session for the graphical session.")
 fi

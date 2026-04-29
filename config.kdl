@@ -104,9 +104,9 @@ environment {
     QT_QPA_PLATFORM "wayland;xcb"
    	QT_QPA_PLATFORMTHEME "qt6ct"
     MOZ_ENABLE_WAYLAND "1"
-    XDG_SESSION_TYPE "wayland"
     XDG_CURRENT_DESKTOP "niri"
     XDG_SESSION_DESKTOP "niri"
+    XDG_SESSION_TYPE "wayland"
     MOZ_DBUS_REMOTE "1"
     GDK_BACKEND "wayland,x11"
 	}

@@ -6,11 +6,9 @@ spawn-at-startup 		"sh" "-c" "[ -f ~/.config/.wallpaper_set ] || (sleep 2 && ~/.
 //spawn-at-startup 		"clipse -listen"
 spawn-at-startup 		"/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-at-startup 		"jams"
-spawn-at-startup		"xwayland-satellite"
 spawn-at-startup		"sh" "-lc" "dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE; systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE"
 spawn-at-startup		"vicinae" "server"
 spawn-at-startup		"pw-metadata" "-n" "settings" "0" "clock.force-quantum 1024"
-spawn-at-startup		"v2rayn"
 
     binds {
     Mod+E 					{ spawn "kitty" "btop"; }
@@ -104,7 +102,6 @@ window-rule {
 }
 
 environment {
-	//QT_STYLE_OVERRIDE "Adwaita-Dark"
 	XCURSOR_THEME "Bibata-Modern-Classic"
 	XCURSOR_SIZE "24"
 	QT_QPA_PLATFORM "wayland;xcb"
