@@ -10,7 +10,8 @@ spawn-at-startup 		"kdeconnect-indicator"
     binds {
     Mod+E 			{ spawn "kitty"; }
     Mod+Return 			{ spawn "kitty"; }
-    Mod+D           { spawn "fuzzel"; }
+    Mod+F           { spawn "fuzzel"; }
+    Mod+Shift+F     { spawn "nautilus"; }
     Mod+V 			{ spawn "kitty" "--class" "clipse" "-e" "clipse";}
     Mod+Shift+C 		{ spawn "hyprpicker" "-a" "$(wl-paste)"; }
     Mod+P 			{ spawn-sh "~/.config/niri/off.sh"; }
@@ -70,8 +71,8 @@ spawn-at-startup 		"kdeconnect-indicator"
     Mod+Shift+WheelScrollUp 	{ move-column-left; }
 
     Mod+R 			{ switch-preset-column-width; }
-    Mod+Shift+F 		{ maximize-column; }
-    Mod+F 			{ fullscreen-window; }
+    Mod+Shift+M 		{ maximize-column; }
+    Mod+M 			{ fullscreen-window; }
     Mod+C 			{ center-column; }
 
     Mod+Ctrl+S 			{ spawn "flameshot" "gui"; }
