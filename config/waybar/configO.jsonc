@@ -93,7 +93,6 @@
         	"format-ethernet": "󰈀",
         	"format-linked": "󰈀",
         	"format-disconnected": "󰤮",
-          "on-click": "python ~/.config/rofi/network/network.py",
 	  "on-click-right": "/mnt/bine4/scripts/wallpaperkonachan.bash",
 	},
 
@@ -108,10 +107,8 @@
 			"tooltip-format": "{:%OI:%M:%S}",
    		"timezone": "Europe/Riga",
     		"interval": 1,
-		"tooltip": "false",
-     //   	"format-alt": "{:%d.%m.%y}",
-    "on-click-right": "bash ~/.config/rofi/calendar/calendar.sh"
-
+		"tooltip": "false"
+     //   	"format-alt": "{:%d.%m.%y}"
 		},
 
 	

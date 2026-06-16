@@ -12,9 +12,8 @@ spawn-at-startup		"pw-metadata" "-n" "settings" "0" "clock.force-quantum 1024"
     binds {
     Mod+E 					{ spawn "kitty" "btop"; }
     Mod+Return 				{ spawn "kitty"; }
-    //Mod+Shift+D				{ spawn "fuzzel"; }
+    Mod+Shift+D				{ spawn "fuzzel"; }
     Mod+D					{ spawn "vicinae" "toggle"; }
-	Mod+Shift+D 				{ spawn "rofi" "-show" "drun"; }
     //Mod+V 				{ spawn "kitty" "--class" "clipse" "-e" "clipse";}
     Mod+V 					{ spawn "vicinae" "vicinae://extensions/vicinae/clipboard/history";}
     Mod+Shift+C 			{ spawn "hyprpicker" "-a" "$(wl-paste)"; }
@@ -33,7 +32,6 @@ spawn-at-startup		"pw-metadata" "-n" "settings" "0" "clock.force-quantum 1024"
     XF86AudioLowerVolume 	{ spawn "playerctl" "previous"; }
     //XF86Launch7			{ spawn "kitty"; } //c
     Mod+Space 				{ spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
-    Mod+O 					{ spawn-sh "~/.config/rofi/sc/sc.sh"; }
     Mod+W					{ spawn-sh "~/.config/niri/pick.sh"; }
     Mod+Ctrl+W				{ spawn "niri" "msg" "action" "clear-dynamic-cast-target"; }
     Mod+Shift+W          	{ spawn "niri" "msg" "action" "set-dynamic-cast-monitor"; }

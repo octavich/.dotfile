@@ -801,7 +801,6 @@ official_required_packages=(
 )
 
 official_optional_packages=(
-    rofi
     hyprpicker
     flameshot
 )

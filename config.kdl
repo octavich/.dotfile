@@ -10,8 +10,7 @@ spawn-at-startup 		"kdeconnect-indicator"
     binds {
     Mod+E 			{ spawn "kitty"; }
     Mod+Return 			{ spawn "kitty"; }
-    Mod+D hotkey-overlay-title="Run an Application: rofi" { spawn "sh" ".local/bin/appdrawer"; }
-    Mod+Shift+D			{ spawn "fuzzel"; }
+    Mod+D           { spawn "fuzzel"; }
     Mod+V 			{ spawn "kitty" "--class" "clipse" "-e" "clipse";}
     Mod+Shift+C 		{ spawn "hyprpicker" "-a" "$(wl-paste)"; }
     Mod+P 			{ spawn-sh "~/.config/niri/off.sh"; }
@@ -30,7 +29,6 @@ spawn-at-startup 		"kdeconnect-indicator"
     XF86AudioRaiseVolume 	{ spawn "playerctl" "next"; }
     XF86AudioLowerVolume 	{ spawn "playerctl" "previous"; }
     Mod+Space 			{ spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
-    Mod+O 			{ spawn-sh "~/.config/rofi/sc/sc.sh"; }
     Mod+W			{ spawn-sh "~/.config/niri/pick.sh"; }
     Mod+Shift+W			{ spawn "niri" "msg" "action" "clear-dynamic-cast-target"; }
     Mod+Ctrl+W          	{ spawn "niri" "msg" "action" "set-dynamic-cast-monitor"; }
