@@ -860,8 +860,6 @@ official_required_packages=(
     os-prober
     foot
     ghostty
-    neovim
-    ranger
     swaync
 )
 

@@ -8,8 +8,7 @@ spawn-at-startup 		"clipse -listen"
 
     binds {
 
-    Mod+E 			{ spawn "kitty" "-e" "ranger"; }
-    Mod+Shift+E			{ spawn "nautilus";}
+    Mod+E 			{ spawn "nautilus"; }
     Mod+Return 			{ spawn "kitty"; }
     Mod+D			{ spawn "fuzzel"; }
     Mod+V 			{ spawn-sh "kitty -e clipse";}

@@ -1,6 +1,6 @@
 font-family = Liberation Mono
 font-size = 10.5
-env = EDITOR=nvim
+env = EDITOR=micro
 
 window-padding-x = 15
 window-padding-y = 15
