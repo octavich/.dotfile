@@ -210,8 +210,8 @@ check_nvidia() {
 
 main() {
     check_command niri-session
-    check_command swww
-    check_command swww-daemon
+    check_command awww
+    check_command awww-daemon
     check_command xwayland-satellite
     check_systemd_user_env
     check_pipewire

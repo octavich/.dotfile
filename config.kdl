@@ -1,6 +1,6 @@
 spawn-at-startup 		"waybar"
-spawn-at-startup 		"swww-daemon"
-spawn-at-startup 		"sh" "-c" "[ -f ~/.config/.wallpaper_set ] || (sleep 2 && ~/.config/sww.sh ~/Pictures/кристюшкинс.jpg && touch ~/.config/.wallpaper_set)"
+spawn-at-startup 		"awww-daemon"
+spawn-at-startup 		"sh" "-c" "[ -f ~/.config/.wallpaper_set ] || (sleep 2 && ~/.config/aww.sh ~/Pictures/кристюшкинс.jpg && touch ~/.config/.wallpaper_set)"
 spawn-at-startup 		"sh" "-lc" "dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE; systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE"
 spawn-at-startup 		"swaync"
 spawn-at-startup 		"clipse" "-listen"
@@ -207,7 +207,7 @@ layer-rule {
     opacity 0.9999
 }
 layer-rule {
-    match namespace="swww-daemon"
+    match namespace="awww-daemon"
     place-within-backdrop true
 }
 

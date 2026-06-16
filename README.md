@@ -21,27 +21,12 @@ Run checks without changing the system:
 ./install.sh --check
 ```
 
-## swww
+## awww
 
-`swww` is built from upstream GitHub source instead of AUR/package metadata:
-
-```text
-https://github.com/LGFae/swww
-```
-
-The installer clones `SWWW_REPO_URL`, checks out `SWWW_VERSION`, runs
-`cargo build --release`, then installs:
+`awww` is installed directly from the official Arch Linux `extra` repository as a package:
 
 ```text
-/usr/local/bin/swww
-/usr/local/bin/swww-daemon
-```
-
-Defaults:
-
-```bash
-SWWW_REPO_URL=https://github.com/LGFae/swww.git
-SWWW_VERSION=v0.11.2
+awww
 ```
 
 Optional AUR packages are skipped by default. `pwvucontrol` is optional because
@@ -303,7 +288,7 @@ After reboot, run:
 
 It checks:
 
-- `niri-session`, `swww`, `swww-daemon` and `xwayland-satellite`;
+- `niri-session`, `awww`, `awww-daemon` and `xwayland-satellite`;
 - imported systemd user environment;
 - PipeWire and PulseAudio compatibility;
 - desktop portals;

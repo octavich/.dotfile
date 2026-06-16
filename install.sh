@@ -5,8 +5,6 @@ set -Eeuo pipefail
 
 REPO_URL="https://github.com/octavich/.dotfile.git"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfile}"
-SWWW_REPO_URL="${SWWW_REPO_URL:-https://github.com/LGFae/swww.git}"
-SWWW_VERSION="${SWWW_VERSION:-v0.11.2}"
 INSTALL_OPTIONAL_AUR="${INSTALL_OPTIONAL_AUR:-0}"
 AUR_SKIP_REVIEW="${AUR_SKIP_REVIEW:-0}"
 NVIDIA_MODE="${NVIDIA_MODE:-auto}"
@@ -44,8 +42,6 @@ Environment:
   NVIDIA_MODE=auto|yes|no
   NVIDIA_DRIVER=open|proprietary
   SESSION_MODE=greetd|tty
-  SWWW_REPO_URL=https://github.com/LGFae/swww.git
-  SWWW_VERSION=v0.11.2
 EOF
 }
 
@@ -328,41 +324,6 @@ install_aur_packages() {
             record_package_result "aur" "$package_name" "failed_optional"
         fi
     done
-}
-
-install_swww_from_github() {
-    if [ -x /usr/local/bin/swww ] && [ -x /usr/local/bin/swww-daemon ]; then
-        log_info "swww and swww-daemon are already installed in /usr/local/bin; skipping source build"
-        installed_successfully+=("source:swww-present")
-        return 0
-    fi
-
-    log_info "Installing swww from GitHub source: $SWWW_REPO_URL ($SWWW_VERSION)"
-
-    local build_root
-    build_root=$(mktemp -d)
-
-    if ! git clone --depth 1 --branch "$SWWW_VERSION" "$SWWW_REPO_URL" "$build_root/swww"; then
-        rm -rf "$build_root"
-        failed_required+=("source:swww-clone")
-        return 0
-    fi
-
-    if ! (cd "$build_root/swww" && cargo build --release); then
-        rm -rf "$build_root"
-        failed_required+=("source:swww-build")
-        return 0
-    fi
-
-    sudo install -Dm755 "$build_root/swww/target/release/swww" /usr/local/bin/swww
-    sudo install -Dm755 "$build_root/swww/target/release/swww-daemon" /usr/local/bin/swww-daemon
-
-    if [ -f "$build_root/swww/completions/swww.fish" ]; then
-        install -Dm644 "$build_root/swww/completions/swww.fish" "$HOME/.config/fish/completions/swww.fish"
-    fi
-
-    rm -rf "$build_root"
-    installed_successfully+=("source:swww")
 }
 
 enable_user_services() {
@@ -788,8 +749,7 @@ official_required_packages=(
     jq
     dbus
     pciutils
-    rust
-    pkgconf
+    awww
     lz4
     wayland
     wayland-protocols
@@ -917,7 +877,6 @@ fi
 install_pacman_packages "required" "${official_required_packages[@]}"
 install_pacman_packages "optional" "${official_optional_packages[@]}"
 install_aur_packages "required" "${aur_required_packages[@]}"
-install_swww_from_github
 
 if [ "$INSTALL_OPTIONAL_AUR" = "1" ]; then
     install_aur_packages "optional" "${aur_optional_packages[@]}"

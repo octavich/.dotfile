@@ -13,7 +13,7 @@ if [[ ! -f "$WALLPAPER" ]]; then
 fi
 
 # 1. Change wallpaper with a nice transition
-swww img "$WALLPAPER" --transition-type center --transition-step 150 --transition-fps 120
+awww img "$WALLPAPER" --transition-type center --transition-step 150 --transition-fps 120
 
 # 2. Generate and apply colors (it will update colors.conf, Waybar, Kitty, etc.)
 matugen image "$WALLPAPER"
