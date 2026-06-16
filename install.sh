@@ -983,7 +983,6 @@ cp -n "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/" 2>/dev/null || true
 wallpaper_path="$HOME/Pictures/BFDF46AE-5B29-4E27-81DF-09E50E732ADE_1_102_o.jpeg"
 if [ -f "$wallpaper_path" ]; then
     matugen image "$wallpaper_path" || log_warn "matugen failed."
-    "$HOME/.config/apply-theme.sh" || log_warn "apply-theme.sh failed."
 fi
 
 if [ "${APPLY_GSETTINGS:-0}" = "1" ]; then

@@ -32,31 +32,32 @@ output_path = '~/.config/matugen/templates/color-test/colors.json'
 [templates.kitty]
 input_path = "~/.config/matugen/templates/kitty/kitty.template.conf"
 output_path = "~/.config/kitty/colors.conf"
-#post_hook = 'pkill -SIGUSR1 kitty'
+post_hook = 'pkill -SIGUSR1 kitty'
 
-#[templates.waybar]
-#input_path = '~/.config/matugen/templates/waybar/color.css'
-#output_path = '~/.config/waybar/colors.css'
-#post_hook = 'pkill -SIGUSR2 waybar'
+[templates.waybar]
+input_path = '~/.config/matugen/templates/waybar/color.css'
+output_path = '~/.config/waybar/colors.css'
+post_hook = 'pkill -SIGUSR2 waybar'
 
 
 #[templates.vesktop]
 #input_path = '~/.config/matugen/templates/discord/midnight-discord.css'
 #output_path = '~/.config/Equicord/themes/midnight-discord.css'
 
-#[templates.vicinae]
-#input_path = '~/.config/matugen/templates/vicinae.toml'
-#output_path = '~/.local/share/vicinae/themes/my-new-theme.toml'
-#post_hook = 'systemctl --user restart vicinae.service '
+[templates.vicinae]
+input_path = '~/.config/matugen/templates/vicinae.toml'
+output_path = '~/.local/share/vicinae/themes/my-new-theme.toml'
+post_hook = 'systemctl --user restart vicinae.service'
 
-#[templates.ghostty]
-#input_path = '~/.config/matugen/templates/ghosstty'
-#output_path = '~/.config/ghostty/themes/Matugen'
-#post_hook = 'pkill -SIGUSR2 ghostty'
+[templates.ghostty]
+input_path = '~/.config/matugen/templates/ghosstty'
+output_path = '~/.config/ghostty/themes/Matugen'
+post_hook = 'pkill -SIGUSR2 ghostty'
 
 
 [templates.btop]
 input_path = '~/.config/matugen/templates/btop.theme'
 output_path = '~/.config/btop/themes/matugen.theme'
 post_hook = 'pkill -USR2 btop || true'
+
 
