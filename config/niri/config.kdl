@@ -1,6 +1,6 @@
  spawn-at-startup		"waybar"
 spawn-at-startup 		"awww-daemon"
-spawn-at-startup 		"sh" "-c" "[ -f ~/.config/.wallpaper_set ] || (sleep 2 && ~/.config/aww.sh ~/Pictures/кристюшкинс.jpg && touch ~/.config/.wallpaper_set)"
+spawn-at-startup 		"sh" "-c" "[ -f ~/.config/.wallpaper_set ] || (sleep 2 && ~/.config/aww.sh ~/Pictures/BFDF46AE-5B29-4E27-81DF-09E50E732ADE_1_102_o.jpeg && touch ~/.config/.wallpaper_set)"
 //spawn-at-startup 		"clipse" "-listen"
 //spawn-at-startup 		"clipse -listen"
 spawn-at-startup 		"/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
