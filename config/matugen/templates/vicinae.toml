@@ -1,0 +1,14 @@
+[meta]
+version = 1
+name = "Matugen"
+description = "A personalized theme for Vicinae"
+variant = "dark"
+inherits = "vicinae-dark"
+
+[colors.core]
+background = "{{colors.background.default.hex}}"
+foreground = "#C1CBCF"
+accent = "#B7D9E2"
+secondary_background = "{{colors.surface_container_low.default.hex}}"
+border = "{{ colors.surface_bright.default.hex }}"
+

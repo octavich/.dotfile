@@ -1,13 +1,11 @@
 #!/bin/bash
 
-CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
+CONFIG_FILE="~/.config/niri/config.kdl"
 TMP_FILE="${CONFIG_FILE}.tmp"
 
-# Считываем текущий статус eDP-1
 EDP_BLOCK=$(awk '/output "eDP-1"[[:space:]]*\{/,/\}/' "$CONFIG_FILE")
 
 if echo "$EDP_BLOCK" | grep -q 'off'; then
-    # Включаем монитор: удаляем строку с "off"
     awk '
         BEGIN {inside=0}
         /output "eDP-1"[[:space:]]*\{/ {inside=1}
@@ -15,9 +13,7 @@ if echo "$EDP_BLOCK" | grep -q 'off'; then
         inside && /\}/ {inside=0}
         {print}
     ' "$CONFIG_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$CONFIG_FILE"
-    echo "Монитор eDP-1 включен."
 else
-    # Выключаем монитор: добавляем "off" после строки с открывающей скобкой
     awk '
         BEGIN {inside=0}
         /output "eDP-1"[[:space:]]*\{/ {
@@ -29,6 +25,5 @@ else
         inside && /\}/ {inside=0}
         {print}
     ' "$CONFIG_FILE" > "$TMP_FILE" && mv "$TMP_FILE" "$CONFIG_FILE"
-    echo "Монитор eDP-1 выключен."
 fi
 

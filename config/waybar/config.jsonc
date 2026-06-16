@@ -9,6 +9,7 @@
     "niri/workspaces",
     "custom/separator",
     "niri/language",
+    "niri/window"
   ],
   "modules-center": [
 	  "clock", "privacy"
@@ -20,14 +21,52 @@
     "backlight",
     "custom/separator",
     "network",
-    "battery"
+    "battery",
+    "bluetooth",
+    "custom/separator",
+    "custom/notification",
+    "custom/separator"
   ],
   // Modules configuration
   "niri/language": {
   	"format": "{}",
 	"format-en": "en",
-	"format-ru": "ru "
+	"format-ru": "ru"
 	},
+
+
+  "niri/window": {
+	"format": "{}",
+  	"max-length": 30,
+  	"rewrite": {
+    	"r (.*)": "ranger",
+    	"b (.*)": "btop++",
+    	"~": "fish",
+    	"(.*)Zen Browser": "Zen Browser",
+	"(.*)bin of (.*)": "materialgram",
+	"OBS(.*)": " OBS Studio"
+}
+},
+
+  "custom/notification": {
+      "tooltip": false,
+      "format": "{icon} ",
+      "format-icons": {
+        "notification": "",
+        "none": "",
+        "dnd-notification": "",
+        "dnd-none": "",
+        "inhibited-notification": "",
+        "inhibited-none": "",
+        "dnd-inhibited-notification": "",
+        "dnd-inhibited-none": ""
+      },        "return-type": "json",
+      "exec-if": "which swaync-client",
+      "exec": "swaync-client -swb",
+      "escape": true,
+      "on-click": "swaync-client -t -sw",
+      "on-click-right": "swaync-client -d -sw"
+  },
   "group/tray-expander": {
     "orientation": "inherit",
     "drawer": {
@@ -51,15 +90,26 @@
     "format": "{:%H:%M:%S}",
     "tooltip-format": "{:%OI:%M:%S}",
     "format-alt": "{:%d/%m/%y}",
-    "timezone": "Europe/Moscow",
+    "timezone": "Europe/Riga",
     "interval": 1,
     "tooltip": true
   },
   "backlight": {
     "format": "  {percent}%",
     "format-icons": ["󰃞", "󰃟", "󰃠"],
-    "scroll-step": 1,
+    "scroll-step": 5,
     "tooltip": false
+  }, 
+  "bluetooth": {
+    "format": "",
+    "format-disabled": "",
+    "format-connected": " {num_connections}",
+    "format-connected-battery": "{icon}",
+    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "tooltip-format": "{controller_alias}\n{num_connections} connected",
+    "tooltip-format-connected": "{controller_alias}\n{num_connections} connected\n\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}",
+    "tooltip-format-enumerate-connected-battery": "{device_alias}\t{icon} {device_battery_percentage}%"
   },
   "battery": {
     "states": {
@@ -73,9 +123,8 @@
     "interval": 3,
  		"format-time": "{H}h {M}m",
 		"tooltip-format": "{capacity} {power}w {time}",
-		"tooltip-format-charging": "{capacity}% (charging) {time}",
+		"tooltip-format-charging": "{capacity}% (charging) {time}"
   },
-
   "network": {
     "format": "{icon}",
     "format-wifi": "{icon}",
@@ -89,20 +138,15 @@
   },
   "pulseaudio": {
     "scroll-step": 5,
-    "format": "{icon}  {volume}%",
+    "format": "{icon} {volume}%",
     "format-muted": " 0%",
     "format-source": " {volume}%",
     "format-source-muted": " ",
     "format-icons": {
-        "default": ["", "", ""]
+        "default": ["", "", ""]
     },
     "on-click": "pavucontrol",
     "tooltip-format": "{volume}%",
-    "tooltip": false
-  },
-  "custom/bluetooth": {
-    "format": "",
-    "on-click": "blueberry",
     "tooltip": false
   },
   "custom/separator": {
@@ -110,12 +154,12 @@
     "tooltip": false
   },
   "cpu": {
-    "format": "  {usage}%",
-    "on-click": "kitty -c btop",
-    "tooltip": false
+    "format": " {usage}%",
+    "on-click": "ghostty -e btop",
+    "tooltip": true
   },
   "memory": {
-    "format": "  {}%",
+    "format": " {}%",
     "on-click": "kitty -c btop"
   },
 	"privacy": {
@@ -144,5 +188,5 @@
 					"name": "cava"
 				}
 			]
-		},
+		}
 }

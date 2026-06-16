@@ -1,24 +1,62 @@
 [general]
 [config]
+
+[templates.foot]
+input_path = '~/.config/matugen/templates/footmatugen.ini'
+output_path = '~/.config/foot/footmatugen.ini'
+
 version_check = false
+
 
 [templates.fuzzel]
 input_path = '~/.config/matugen/templates/fuzzel/fuzzel_theme.ini'
 output_path = '~/.config/fuzzel/fuzzel_theme.ini'
 
-[templates.gtk3]
+[templates.gtk3] 
 input_path = '~/.config/matugen/templates/gtk/gtk-colors.css'
-output_path = '~/.config/gtk-3.0/colors.css'
+output_path = '~/.config/gtk-3.0/colors.css' 
+post_hook = 'gsettings set org.gnome.desktop.interface gtk-theme ""; gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark' 
 
-[templates.gtk4]
+[templates.gtk4] 
 input_path = '~/.config/matugen/templates/gtk4/gtk-colors.css'
 output_path = '~/.config/gtk-4.0/colors.css'
 
-[templates.master_colors]
-input_path = '~/.config/matugen/templates/colors.conf.template'
-output_path = '~/.config/colors.conf'
-post_hook = '~/.config/apply-theme.sh'
+[templates.colortest]
+input_path ='~/.config/matugen/templates/colors.json'
+output_path = '~/.config/matugen/templates/color-test/colors.json'
 
-[templates.vesktop]
-input_path = '~/.config/matugen/templates/discord/midnight-discord.css'
-output_path = '~/.config/Equicord/themes/midnight-discord.css'
+#[templates.kde_colors]
+#input_path = '~/.config/matugen/templates/kde/color.txt'
+#output_path = '~/.local/state/quickshell/user/generated/color.txt'
+
+[templates.kitty]
+input_path = "~/.config/matugen/templates/kitty/kitty.template.conf"
+output_path = "~/.config/kitty/colors.conf"
+#post_hook = 'pkill -SIGUSR1 kitty'
+
+#[templates.waybar]
+#input_path = '~/.config/matugen/templates/waybar/color.css'
+#output_path = '~/.config/waybar/colors.css'
+#post_hook = 'pkill -SIGUSR2 waybar'
+
+
+#[templates.vesktop]
+#input_path = '~/.config/matugen/templates/discord/midnight-discord.css'
+#output_path = '~/.config/Equicord/themes/midnight-discord.css'
+
+#[templates.vicinae]
+#input_path = '~/.config/matugen/templates/vicinae.toml'
+#output_path = '~/.local/share/vicinae/themes/my-new-theme.toml'
+#post_hook = 'systemctl --user restart vicinae.service '
+
+#[templates.ghostty]
+#input_path = '~/.config/matugen/templates/ghosstty'
+#output_path = '~/.config/ghostty/themes/Matugen'
+#post_hook = 'pkill -SIGUSR2 ghostty'
+
+
+[templates.btop]
+input_path = '~/.config/matugen/templates/btop.theme'
+output_path = '~/.config/btop/themes/matugen.theme'
+post_hook = 'pkill -USR2 btop || true'
+

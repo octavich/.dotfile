@@ -1,81 +1,79 @@
 {
-  "display": {
-    "color": {
-      "keys": "magenta"
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "padding": {
+            "left": 1,
+            "top": 0
+        },
+        "source": "~/.config/fastfetch/ascii/mlp.txt"  
     },
-    "separator": " ",
-    "size": {
-      "maxPrefix": "GB",
-      "ndigits": 0
-    }
-  },
-  "logo": {
-    "padding": {
-      "left": 1,
-      "top": 1
+    "display": {
+        "separator": "<~ ",
+        "color": {
+            "separator": "green"
+        }
     },
-    "source": "~/.config/fastfetch/ascii/tree.txt"
-  },
-  "modules": [
-    "break",
-    {
-      "color": {
-        "at": "red",
-        "host": "blue",
-        "user": "green"
-      },
-      "type": "title"
-    },
-    {
-      "format": "{pretty-name}",
-      "key": "󰜗",
-      "type": "os"
-    },
-    {
-      "format": "Hatsune Miku",
-      "key": "󰒕",
-      "type": "os"
-    },
-    {
-      "format": "{pacman}p {flatpak-system}f",
-      "key": "",
-      "type": "packages"
-    },
-    {
-      "format": "{pretty-name}",
-      "key": "󰜗",
-      "type": "wm"
-    },
-    {
-      "format": "{pretty-name}",
-      "key": "",
-      "type": "terminal"
-    },
-    {
-      "format": "{name} {battery-percentage}",
-      "key": "",
-      "type": "bluetooth"
-    },
-    {
-      "format": "{size-used}/{size-total} - {size-percentage}",
-      "key": "",
-      "type": "disk"
-    },
-    {
-      "format": "{formatted}",
-      "key": "",
-      "type": "uptime"
-    },
-    {
-      "key": "󰃭",
-      "text": "modify_install=$(stat -c %W /)\ncurrent=$(date +%s)\ntime_progression=$((current - modify_install))\ndays_difference=$((time_progression / 86400))\necho $days_difference days\n",
-      "type": "command"
-    },
-    {
-      "key": "󰌁",
-      "symbol": "circle",
-      "type": "colors"
-    }
-  ]
+    "modules": [
+        "break",
+        "break",
+	"break",
+	"break",
+        {
+            "type": "os",
+            "key": "Distro      ",
+            "format": "{pretty-name}"
+        },
+        {
+            "type": "host",
+            "key": "Think       ",
+            "keyColor": "red",
+            "format": "Th\u001b[31mi\u001b[0mnkPad P53"
+        },
+        {
+            "type": "uptime",
+            "key": "Uptime      ",
+            "keyColor": "green"
+        },
+        {
+            "type": "packages",
+            "key": "Packages    ",
+            "keyColor": "",
+            "format": "{pacman} pacman {flatpak-user} flatpak"
+        },
+        {
+            "type": "cpu",
+            "key": "CPU         ",
+            "keyColor": "cyan",
+            "format": "{name}"
+        },
+        {
+            "type": "gpu",
+            "key": "GPU         ",
+            "keyColor": "green",
+            "format": "{name}"
+        },
+        {
+            "type": "memory",
+            "key": "RAM         ",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "disk",
+            "key": "Disk        ",
+            "keyColor": "white",
+            "format": "{size-used} {size-total} ({size-percentage}) - {days} day"
+        },
+        {
+            "type": "bluetooth",
+            "key": "Btooth      ",
+            "keyColor": "blue",
+            "format": "{name} ({battery-percentage})"
+        },
+        "break",
+        {
+            "type": "colors",
+            "paddingLeft": 6,
+            "symbol": "circle"
+        }
+    ]
 }
-

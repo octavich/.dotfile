@@ -1,0 +1,89 @@
+[
+  {
+    "height": 30,
+    "position": "top",
+    "layer": "top",
+
+    "modules-left": [
+      "niri/workspaces"
+    ],
+
+    "modules-center": [
+      "niri/window"
+    ],
+
+    "modules-right": [
+      "niri/language",
+      "custom/weather",
+      "pulseaudio",
+      "battery",
+      "clock",
+      "tray"
+    ],
+
+   
+    "niri/language": {
+      "format-en": "us",
+      "format-ru": "ru",
+      "min-length": 5
+    },
+"niri/window": {
+"format": "{}",
+  "max-length": 30,
+  "rewrite": {
+    "r (.*)": "ranger",
+    "(.*)Zen Browser":
+      "<span size='108%'>󰺕</span> Zen",
+        "(.*)bin of (.*)":
+      "materialgram"
+}
+},
+    "custom/weather": {
+      "class": "weather",
+      "exec": "curl -s 'wttr.in/Riga?format=%c%t'",
+      "format": " {} ",
+      "interval": 300
+    },
+
+    "pulseaudio": {
+      "format": "{icon} {volume}%",
+      "format-bluetooth": "{icon} {volume}% ",
+      "format-icons": {
+        "default": [
+          "",
+          ""
+        ]
+      },
+      "format-muted": "",
+      "on-click": "pavucontrol"
+    },
+
+    "battery": {
+      "format": "{icon} {capacity}%",
+      "format-alt": "{time} {icon}",
+      "format-charging": " {capacity}%",
+      "format-icons": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "states": {
+        "critical": 1,
+        "warning": 30
+      }
+    },
+
+    "clock": {
+      "format": "{:%d.%m.%Y - %H:%M}",
+      "format-alt": "{:%A, %B %d at %R}"
+    },
+
+    "tray": {
+      "icon-size": 14,
+      "spacing": 1
+    }
+  }
+]
+

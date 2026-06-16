@@ -858,6 +858,11 @@ official_required_packages=(
     playerctl
     xdg-user-dirs
     os-prober
+    foot
+    ghostty
+    neovim
+    ranger
+    swaync
 )
 
 official_optional_packages=(
@@ -868,6 +873,8 @@ official_optional_packages=(
 aur_required_packages=(
     vicinae-bin
     bibata-cursor-theme-bin
+    quickshell
+    noctalia-shell
 )
 
 aur_optional_packages=(
@@ -990,7 +997,7 @@ else
 fi
 
 enable_user_services pipewire.service pipewire-pulse.service wireplumber.service
-enable_user_services vicinae.service
+enable_user_services swaync.service vicinae.service
 configure_session_startup
 configure_nvidia_modeset
 

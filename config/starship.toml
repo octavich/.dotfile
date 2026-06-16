@@ -1,25 +1,16 @@
-# ~/.config/starship.toml
-
-add_newline = false
-
-format = """
-╭──$directory$git_branch$git_status$cmd_duration
-╰─$character"""
-
+format =  """
+$username$hostname\
+$directory\
+$cmd_duration \
+$fill\
+$c\
+$git_branch\
+$time\n\
+[>](fg:iris)\
+"""
 [character]
-success_symbol = "[](bold blue)"
-error_symbol = "[](bold red)"
-
-[os]
-format = "[$symbol ](white)"
-disabled = true
-
-[os.symbols]
-NixOS = "󱄅 "
-Arch = " "
-Gentoo = " "
-Linux = " "
-Macos = " "
+success_symbol = "[@](bold green)"
+error_symbol = "[@](bold red)"
 
 [directory]
 format = "[ $path](bold blue)"
@@ -27,18 +18,35 @@ truncation_length = 4
 read_only = " 󰌾 "
 read_only_style = "red"
 
-[directory.substitutions]
-"~" = "~"
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
-"Games" = " "
-"Videos" = " "
+[fill]
+symbol = ' '
+style = '#505050'
 
-[git_branch]
-format = "[ $symbol$branch](purple) "
-symbol = " "
+[time]
+disabled = false
+time_format = " %H:%M:%S"
+style = "#444444"
+format = '[$time]($style)'
 
 [cmd_duration]
-format = "[  $duration](yellow) "
+format = "[ $duration](yellow) "
+
+[git_branch]
+format = "[ $symbol $branch ]($style)(fg:overlay)"
+symbol =  ""
+
+[username]
+disabled = false
+format = "[$user]($style)(fg:overlay)@"
+show_always = true
+style_root = "bg:overlay fg:iris"
+style_user = "bg:overlay fg:iris"
+
+[hostname]
+ssh_only = false
+format = '[$ssh_symbol](bold blue)[$hostname](bold red)'
+trim_at = '.companyname.com'
+disabled = false
+
+
+

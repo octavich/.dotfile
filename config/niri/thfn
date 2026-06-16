@@ -1,0 +1,28 @@
+#!/bin/bash
+PROC_FAN="/proc/acpi/ibm/fan"
+next_level() {
+    local c=$1 d=$2
+    case "$c" in
+        auto)       [[ $d == "+" ]] && echo 0 || echo auto ;;
+        disengaged) [[ $d == "+" ]] && echo auto || echo 7 ;;
+        [0-7])      n=$c; [[ $d == "+" ]] && ((++n)) || ((n--))
+                    [[ $n -eq -1 ]] && echo auto || [[ $n -eq 8 ]] && echo disengaged || echo $n ;;
+        *)          echo "$c" ;;
+    esac
+}
+[[ -f "$PROC_FAN" ]] || { echo "Error: $PROC_FAN not found"; exit 1; }
+case "$1" in
+    +|-)    next=$(next_level "$(grep '^level' "$PROC_FAN" | sed 's/.*level:[[:space:]]*//')" "$1")
+            echo "level $next" > "$PROC_FAN" 2>/dev/null
+            echo "Set to: $next" ;;
+    a|auto) echo "level auto" > "$PROC_FAN" 2>/dev/null ;;
+    f|full) echo "level disengaged" > "$PROC_FAN" 2>/dev/null ;;
+    [0-7]|disengaged) echo "level $1" > "$PROC_FAN" 2>/dev/null ;;
+    ss)     sensors thinkpad-isa-0000 2>/dev/null | grep -E "^fan1" | sed 's/^fan1:[[:space:]]*//' | head -1 ;;
+    status|s|info)
+        while IFS=: read -r k v; do k=${k// } v=${v// }; [[ $k == level ]] && echo "level: $v"; done < "$PROC_FAN"
+        sensors thinkpad-isa-0000 2>/dev/null | grep -E "^fan[12]" | head -2
+        sensors 2>/dev/null | grep -E "(CPU|GPU)" | head -5 ;;
+    *) echo "Usage: $0 {a|auto|f|0-7|disengaged|+|-|s|ss}" ;;
+esac
+

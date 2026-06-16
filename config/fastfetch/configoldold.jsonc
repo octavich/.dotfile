@@ -1,0 +1,101 @@
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+
+    "logo": {
+      "padding": {
+      "left": 1,
+      "top": 0
+    },
+        /*"source": "~/.config/fastfetch/ascii/neko.txt"  */
+    },
+    "display": {
+        "color": {
+            "separator": "blue"
+        },
+        "separator": " | ",
+        "constants": [
+            ">-----------<+>--------------------------------------<"
+        ]
+    },
+    "modules": [
+  	//"break",
+	    {
+      "format": "{family}",
+      "key": "   Think    ",
+      "type": "host",
+      "keyColor": "red"
+    },
+        {
+            "type": "custom",
+            "format": "{$1}",
+            "outputColor": "separator"
+        },
+        {
+            "type": "uptime",
+            "key": "   Uptime   ",
+            "keyColor": "green"
+        },
+	    {
+            "key": "   Days     ",
+       	    "keyColor": "green",
+            "text": "modify_install=$(stat -c %W /)\ncurrent=$(date +%s)\ntime_progression=$((current - modify_install))\ndays_difference=$((time_progression / 86400))\necho $days_difference days\n",
+            "type": "command"
+    },
+        {
+            "type": "shell",
+            "key": "   Shell    ",
+            "keyColor": "green"
+        },
+        {
+            "type": "terminal",
+	    "format": "{pretty-name}",
+            "key": "   Terminal ",
+            "keyColor": "green"
+        },
+        {
+            "type": "packages",
+	    "format": "{emerge} emerge {flatpak-user} flatpak",
+            "key": "   Packages ",
+            "keyColor": "green"
+        },
+        {
+            "type": "custom",
+            "format": "{$1}",
+            "outputColor": "separator"
+        },
+        {
+            "type": "cpu",
+	    "format": "{name}",
+            "key": "   CPU      ",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "gpu",
+	    "format": "{name}",
+            "key": "   GPU      ",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "memory",
+            "key": "   RAM      ",
+            "keyColor": "cyan"
+        },
+        {
+            "type": "disk",
+            "key": "   Disk     ",
+            "keyColor": "cyan"
+        },
+	{
+            "type": "custom",
+            "format": "{$1}",
+            "outputColor": "separator"
+        },
+	   {
+      "format": "{name} {battery-percentage}",
+      "key": "   Btooth   ",
+      "type": "bluetooth"
+    },
+    "break"
+    ]
+}
+
