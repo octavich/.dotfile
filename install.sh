@@ -11,6 +11,7 @@ NVIDIA_MODE="${NVIDIA_MODE:-auto}"
 NVIDIA_DRIVER="${NVIDIA_DRIVER:-open}"
 SESSION_MODE="${SESSION_MODE:-greetd}"
 CHECK_ONLY="${CHECK_ONLY:-0}"
+UNINSTALL_ONLY="${UNINSTALL_ONLY:-0}"
 SUDO_KEEPALIVE_PID=""
 export EDITOR="${EDITOR:-micro}"
 export VISUAL="${VISUAL:-micro}"
@@ -34,6 +35,7 @@ Options:
   --session=greetd            Configure greetd + tuigreet. This is the default.
   --session=tty               Keep tty1 fish autostart flow and disable greetd.
   --check                     Run preflight checks only; do not change the system.
+  --uninstall-configs         Uninstall and restore config files only (leaves packages installed).
   -h, --help                  Show this help.
 
 Environment:
@@ -103,6 +105,9 @@ for arg in "$@"; do
             ;;
         --check)
             CHECK_ONLY=1
+            ;;
+        --uninstall-configs)
+            UNINSTALL_ONLY=1
             ;;
         -h|--help)
             usage
@@ -741,6 +746,61 @@ print_summary() {
     fi
 }
 
+uninstall_configs() {
+    log_info "Removing dotfile symlinks and configurations..."
+    
+    local item_path
+    for item_path in "$DOTFILES_DIR/config/"*; do
+        local item_name
+        item_name=$(basename "$item_path")
+        local target_path="$HOME/.config/$item_name"
+        
+        if [ -L "$target_path" ]; then
+            local link_target
+            link_target=$(readlink "$target_path" || true)
+            if [[ "$link_target" == *"$DOTFILES_DIR"* ]]; then
+                log_info "Removing symlink: $target_path"
+                rm -f "$target_path"
+            fi
+        elif [ -d "$target_path" ] && [ "$item_name" = "gtk-3.0" ]; then
+            log_info "Cleaning up gtk-3.0 configuration files"
+            for gtk_item in "$DOTFILES_DIR/config/gtk-3.0/"*; do
+                local gtk_name
+                gtk_name=$(basename "$gtk_item")
+                local gtk_target="$target_path/$gtk_name"
+                if [ -L "$gtk_target" ]; then
+                    rm -f "$gtk_target"
+                elif [ "$gtk_name" = "bookmarks.template" ] && [ -f "$target_path/bookmarks" ]; then
+                    rm -f "$target_path/bookmarks"
+                fi
+            done
+            rmdir "$target_path" 2>/dev/null || true
+        fi
+    done
+
+    rm -f "$HOME/.config/.wallpaper_set"
+
+    if command_exists systemctl && systemctl --user show-environment >/dev/null 2>&1; then
+        log_info "Disabling systemd user services..."
+        systemctl --user disable --now vicinae.service 2>/dev/null || true
+    fi
+
+    if [ -f /usr/local/bin/dotfile-niri-session ]; then
+        log_info "Removing wrapper /usr/local/bin/dotfile-niri-session"
+        sudo rm -f /usr/local/bin/dotfile-niri-session
+    fi
+
+    if [ -f /etc/greetd/config.toml ]; then
+        if grep -q "dotfile-niri-session" /etc/greetd/config.toml; then
+            log_info "Disabling greetd service and restoring config"
+            sudo systemctl disable greetd.service 2>/dev/null || true
+            sudo rm -f /etc/greetd/config.toml
+        fi
+    fi
+
+    log_info "Configuration cleanup complete!"
+}
+
 official_required_packages=(
     base-devel
     git
@@ -813,6 +873,11 @@ aur_required_packages=(
 aur_optional_packages=(
     pwvucontrol
 )
+
+if [ "$UNINSTALL_ONLY" = "1" ]; then
+    uninstall_configs
+    exit 0
+fi
 
 preflight_checks
 
