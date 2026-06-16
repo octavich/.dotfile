@@ -2,7 +2,6 @@ spawn-at-startup 		"waybar"
 spawn-at-startup 		"awww-daemon"
 spawn-at-startup 		"sh" "-c" "[ -f ~/.config/.wallpaper_set ] || (sleep 2 && ~/.config/aww.sh ~/Pictures/кристюшкинс.jpg && touch ~/.config/.wallpaper_set)"
 spawn-at-startup 		"sh" "-lc" "dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE; systemctl --user import-environment DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE"
-spawn-at-startup 		"swaync"
 spawn-at-startup 		"clipse" "-listen"
 //spawn-at-startup 		"clipse -listen"
 spawn-at-startup 		"/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
@@ -275,13 +274,6 @@ window-rule {
     		default-floating-position x=32 y=32 relative-to="top-right"
     		open-focused false
 	}
-
-window-rule {
-		match app-id="swaync-notification-window"
-		open-focused false
-		match is-focused=true
-	}
-
 window-rule{
     		match app-id="zen$"
 		match app-id="discord"

@@ -11,7 +11,6 @@
 		"fixed-center": true,
 		"reload_style_on_change": true,
 		"modules-left": [
-			"custom/notifications",
 			"tray",
 			"niri/language",
 			"cava"],
@@ -99,22 +98,6 @@
 	},
 
  
-  "custom/notifications": {
-    "tooltip": false,
-    "format": "{icon}",
-    "format-icons": {
-      "notification": "<span foreground='#DB4740'> </span>",
-      "none": " ",
-      "dnd-notification":"<span foreground='#DB4740'> </span>",
-      "dnd-none": " ",
-    },
-    "return-type": "json",
-    "exec-if": "which swaync-client",
-    "exec": "swaync-client --reload-css -swb",
-    "on-click": "swaync-client -t -sw",
-    "on-click-right": "swaync-client -d -sw",
-    "escape": true
-  },
 	"tray": {
 		"icon-size": 14,
 		"spacing": 5,

@@ -1,7 +1,6 @@
  spawn-at-startup		"waybar"
 spawn-at-startup 		"awww-daemon"
 spawn-at-startup 		"sh" "-c" "[ -f ~/.config/.wallpaper_set ] || (sleep 2 && ~/.config/aww.sh ~/Pictures/кристюшкинс.jpg && touch ~/.config/.wallpaper_set)"
-//spawn-at-startup 		"swaync"
 //spawn-at-startup 		"clipse" "-listen"
 //spawn-at-startup 		"clipse -listen"
 spawn-at-startup 		"/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
@@ -281,12 +280,6 @@ window-rule {
 window-rule {
 		match app-id="io.github.kukuruzka165.materialgram"
 		 open-on-workspace "2"
-}
-window-rule {
-		match app-id="swaync-notification-window"
-		open-focused false
-		match is-focused=true
-	}
 window-rule {
     match app-id="gsr-ui"
 	open-focused true

@@ -779,7 +779,6 @@ official_required_packages=(
     pipewire-jack
     matugen
     nwg-look
-    swaync
     fuzzel
     papirus-icon-theme
     ttf-jetbrains-mono-nerd
@@ -787,8 +786,7 @@ official_required_packages=(
     noto-fonts-emoji
     loupe
     clapper
-    nemo
-    nemo-fileroller
+    nautilus
     gst-plugins-good
     gst-plugins-bad
     gst-plugins-ugly
@@ -928,7 +926,7 @@ else
 fi
 
 enable_user_services pipewire.service pipewire-pulse.service wireplumber.service
-enable_user_services swaync.service vicinae.service
+enable_user_services vicinae.service
 configure_session_startup
 configure_nvidia_modeset
 

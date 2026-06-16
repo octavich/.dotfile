@@ -20,10 +20,7 @@
     "backlight",
     "custom/separator",
     "network",
-    "battery",
-    "custom/separator",
-    "custom/notification",
-    "custom/separator"
+    "battery"
   ],
   // Modules configuration
   "niri/language": {
@@ -31,25 +28,6 @@
 	"format-en": "en",
 	"format-ru": "ru "
 	},
-  "custom/notification": {
-      "tooltip": false,
-      "format": "{icon} ",
-      "format-icons": {
-        "notification": "",
-        "none": "",
-        "dnd-notification": "",
-        "dnd-none": "",
-        "inhibited-notification": "",
-        "inhibited-none": "",
-        "dnd-inhibited-notification": "",
-        "dnd-inhibited-none": ""
-      },        "return-type": "json",
-      "exec-if": "which swaync-client",
-      "exec": "swaync-client -swb",
-      "escape": true,
-      "on-click": "swaync-client -t -sw",
-      "on-click-right": "swaync-client -d -sw"
-  },
   "group/tray-expander": {
     "orientation": "inherit",
     "drawer": {
