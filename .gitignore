@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+
+# Cloned by install.sh
+.config/ranger/plugins/ranger_devicons/
+.config/ranger/plugins/ranger-archives/
+
+# Runtime state written by fish
+.config/fish/fish_variables

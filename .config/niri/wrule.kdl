@@ -1,0 +1,195 @@
+blur {
+    passes 3
+    offset 4
+    noise 0.05
+    saturation 1.5
+}
+
+
+layer-rule {
+    match namespace="^launcher$"
+    match namespace="launchdrop"
+    match namespace="^dock$"
+    //match namespace="noctalia-bar-default"
+    //match namespace="noctalia-attached-panel"
+
+    background-effect {
+        blur true
+	xray false
+    }
+}
+
+window-rule {
+    match app-id="Nautilus"
+    popups {
+        geometry-corner-radius 16
+        opacity 0.8
+
+        background-effect {
+            blur true
+        }
+    }
+}
+window-rule {
+    match app-id="com.whyoolw.Translator"
+    match app-id="com.whyoolw.Currency"
+    match app-id="com.whyoolw.Ytdl"
+    default-column-width { fixed 660; }
+    default-window-height { fixed 300; }
+
+    open-floating true
+}
+window-rule {
+    match app-id="sirus-launcher-v2"
+    open-floating false
+}
+
+window-rule {
+    match app-id="spotify"
+    match app-id="Spotify"
+    //match app-id="kitty"
+        opacity 0.9
+
+        background-effect {
+            blur true
+	    xray false
+    }
+}
+window-rule {
+    match app-id="kitty"
+    match app-id="zen"
+        background-effect {
+            blur true
+	    xray false
+    }
+}
+
+layer-rule {
+    match namespace="waybar"
+    match at-startup=true
+    opacity 0.9999
+}
+
+layer-rule {
+    match namespace="noctalia-wallpaper"
+    match namespace="noctalia-wallpaper-eDP-1"
+    match namespace="noctalia-wallpaper-HDMI-A-1"
+    place-within-backdrop true
+}
+overview {
+	    workspace-shadow {
+        off
+	}
+		backdrop-color "#161616"
+	 	zoom 0.35
+}
+window-rule {
+    		geometry-corner-radius 0
+    		clip-to-geometry true
+	}
+
+window-rule {
+    		match is-window-cast-target=true
+    		tab-indicator {
+        	active-color "#f38ba8"
+        	inactive-color "#7d0d2d"
+    		}
+}
+window-rule {
+    		match app-id="zen" title="^Картинка в картинке$"
+		match app-id="zen" title="^Picture-in-Picture$"
+    		open-floating true
+    		default-floating-position x=32 y=32 relative-to="top-right"
+    		open-focused false
+	}
+window-rule{
+    		match app-id="zen$"
+		match app-id="discord"
+		match app-id="equibop"
+		match app-id="Spotify"
+		match app-id="spotify"
+		match app-id="io.github.aaddrick.claude-desktop-debian"
+		match app-id="com.whyoolw.GrokDesktop"
+    		open-maximized true
+	}
+window-rule {
+		//match app-id="io.github.kukuruzka165.materialgram"
+		match title="Ночд*"
+		match title="bin*"
+		block-out-from "screencast"
+	}
+
+window-rule {
+		match app-id="io.github.kukuruzka165.materialgram"
+		 default-column-width { fixed 1266; }
+	}
+window-rule {
+
+		match app-id="app.zen_browser.zen"
+		block-out-from "screencast"
+	}
+
+layer-rule {
+    		match namespace="noctalia-notifications-eDP-1"
+		match namespace="noctalia-notification"
+    		block-out-from "screencast"
+	}
+
+window-rule {
+    match is-window-cast-target=true
+    focus-ring {
+        active-color "#f38ba8"
+        inactive-color "#7d0d2d"
+    }
+    border {
+        active-color "#7d0d2d"
+	inactive-color "#7d0d2d"
+    }
+    tab-indicator {
+        active-color "#f38ba8"
+        inactive-color "#7d0d2d"
+    }
+}
+
+window-rule {
+		match app-id="org.gnome.NautilusPreviewer"
+		open-floating true
+}
+window-rule {
+		match app-id="org.kde.kdeconnect.daemon"
+		match app-id="org.gnome.Calculator"
+            	default-column-width { fixed 550; }
+    		default-window-height { fixed 300; }
+    		open-floating true
+	}
+
+animations {
+	//off
+	workspace-switch {
+    spring damping-ratio=0.8 stiffness=1000 epsilon=0.0001
+  }
+  window-open {
+    duration-ms 150
+    curve "ease-out-quad"
+  }
+  window-close {
+    duration-ms 150
+    curve "ease-out-quad"
+  }
+   horizontal-view-movement {
+    spring damping-ratio=0.8 stiffness=800 epsilon=0.0001
+  }
+  window-movement {
+    spring damping-ratio=0.8 stiffness=800 epsilon=0.0001
+  }
+  window-resize {
+    spring damping-ratio=0.8 stiffness=800 epsilon=0.0001
+  }
+  config-notification-open-close {
+    spring damping-ratio=0.6 stiffness=1000 epsilon=0.001
+  }
+  exit-confirmation-open-close {
+    spring damping-ratio=0.6 stiffness=500 epsilon=0.01
+  }
+}
+

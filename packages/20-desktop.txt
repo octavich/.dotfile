@@ -1,0 +1,38 @@
+# niri session, Noctalia shell and everything spawned from niri/config.kdl.
+niri
+xwayland-satellite          # niri starts it on demand for X11 apps
+xdg-desktop-portal
+xdg-desktop-portal-gnome    # screencasting (Mod+W dynamic cast, OBS)
+xdg-desktop-portal-gtk      # file chooser
+noctalia
+polkit-gnome
+gnome-keyring
+gvfs
+gvfs-goa                    # gvfs-goa-volume-monitor.service
+qt6ct                       # QT_QPA_PLATFORMTHEME=qt6ct
+qt6-wayland
+qt5-wayland
+
+pipewire
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+wireplumber                 # wpctl
+upower
+bluez
+bluez-utils
+
+fuzzel
+clipse                      # clipboard (AUR)
+jams                        # auto-pause music (AUR)
+hyprpicker
+flameshot
+brightnessctl
+playerctl
+wl-clipboard
+libnotify                   # notify-send in fuzzel/ytdl.sh
+lm_sensors                  # niri/thfn_
+
+matugen
+adw-gtk-theme               # matugen gtk3 post_hook: adw-gtk3-dark
+nwg-look

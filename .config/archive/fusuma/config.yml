@@ -1,0 +1,24 @@
+interval:
+  swipe: 0.75
+  pinch: 0.5
+threshold:
+  pinch: 0.5
+pinch:
+  4:
+    in:
+      command: fuzzel
+    out:
+      command: pkill fuzzel
+hold:
+  3:
+    command: playerctl play-pause
+swipe:
+  4:
+    left:
+    command: "kitty"
+rotate:
+  3:
+    clockwise:
+      command: playerctl next
+    counterclockwise:
+      command: playerctl previous

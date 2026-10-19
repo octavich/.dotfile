@@ -1,0 +1,6 @@
+ttf-liberation          # kitty, fuzzel: Liberation Mono
+otf-monocraft           # foot (AUR)
+ttf-nerd-fonts-symbols  # starship / ranger_devicons glyphs
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji

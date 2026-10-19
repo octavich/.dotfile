@@ -1,0 +1,19 @@
+# Applications bound in niri/config.kdl, window rules and ranger/rifle.conf.
+nautilus
+file-roller
+loupe
+mpv
+evince
+gnome-calculator
+kdeconnect
+obs-studio
+gst-plugins-good
+gst-plugins-bad
+gst-plugins-ugly
+gst-libav
+dragon-drop                         # ranger: Ctrl+D (AUR)
+zen-browser-bin                     # AUR
+spotify-launcher|spotify
+equibop-bin|equibop                 # AUR
+materialgram-bin                    # AUR
+claude-desktop-appimage             # Mod+O (AUR)

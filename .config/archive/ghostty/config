@@ -1,0 +1,22 @@
+font-family = Liberation Mono
+font-size = 10.5
+env = EDITOR=nvim
+
+window-padding-x = 15
+window-padding-y = 15
+
+#window-decoration = none
+#theme = "Carbonfox"
+#theme = Afterglow
+
+window-padding-x = 16
+window-padding-y = 16
+
+app-notifications = no-config-reload
+
+
+keybind = ctrl+q=close_surface
+#keybind = ctrl+a=new_split:left
+keybind = ctrl+s=new_split:right
+#keybind = ctrl+e=toggle_split_zoom
+theme = Catppuccin Latte

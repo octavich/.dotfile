@@ -1,0 +1,239 @@
+spawn-sh-at-startup		"noctalia"
+spawn-at-startup 		"/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-sh-at-startup 		"jams"
+spawn-at-startup 		"clipse" "-listen"
+spawn-at-startup  		"systemctl" "--user" "start" "gvfs-goa-volume-monitor.service"
+spawn-at-startup 		"gnome-keyring-daemon" "--foreground" "--components=pkcs11,secrets"
+spawn-at-startup		"thfn-gtk" "--daemon"
+
+    binds {
+
+    Mod+E 			{ spawn "kitty" "-e" "ranger"; }
+    Mod+Shift+E			{ spawn "nautilus";}
+    Mod+Return 			{ spawn "kitty"; }
+    Mod+D			{ spawn "fuzzel"; }
+    Mod+V 			{ spawn-sh "kitty -e clipse";}
+    Mod+Shift+C 		{ spawn "hyprpicker" "-a" "$(wl-paste)"; }
+    Mod+P 			{ spawn-sh "~/.config/niri/off.sh"; }
+    Mod+O			{ spawn "claude-desktop"; }
+    Mod+Q			{ spawn "translator-gtk";}
+    Mod+N			{ spawn "calc-gtk"; }
+    Mod+M			{ spawn "currency-gtk";}
+    Mod+Y			{ spawn "/usr/local/bin/ytdl-gtk"; }
+    Mod+BackSlash		{ spawn "obs" "--startreplaybuffer"; }
+
+    XF86MonBrightnessUp 	{ spawn "brightnessctl" "-q" "set" "2%+"; }
+    XF86MonBrightnessDown 	{ spawn "brightnessctl" "-q" "set" "2%-"; }
+    XF86AudioPlay 		{ spawn "playerctl" "play-pause"; }
+    XF86AudioNext 		{ spawn "playerctl" "next"; }
+    XF86AudioPrev 		{ spawn "playerctl" "previous"; }
+    XF86AudioMute 		{ spawn "playerctl" "play-pause"; }
+    XF86AudioRaiseVolume 	{ spawn "playerctl" "next"; }
+    XF86AudioLowerVolume 	{ spawn "playerctl" "previous"; }
+
+    Mod+Space 			{ spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    Mod+W			{ spawn-sh "~/.config/niri/pick.sh"; }
+    Mod+Shift+W			{ spawn "niri" "msg" "action" "clear-dynamic-cast-target"; }
+    Mod+Ctrl+W          	{ spawn "niri" "msg" "action" "set-dynamic-cast-monitor"; }
+
+    Mod+Shift+space 		{ toggle-window-floating; }
+    Mod+Shift+Q 		{ close-window; }
+    Mod+X			{ toggle-overview; }
+
+    Mod+left 			{ focus-column-left; }
+    Mod+down 			{ focus-workspace-down; }
+    Mod+up 			{ focus-workspace-up; }
+    Mod+right 			{ focus-column-right; }
+    Mod+Shift+left 		{ move-column-left; }
+    Mod+Shift+down		{ move-column-to-workspace-down; }
+    Mod+Shift+up		{ move-column-to-workspace-up; }
+    Mod+Shift+right		{ move-column-right; }
+ 
+    Mod+1 			{ focus-workspace 1; }
+    Mod+2 			{ focus-workspace 2; }
+    Mod+3 			{ focus-workspace 3; }
+    Mod+4 			{ focus-workspace 4; }
+    Mod+5 			{ focus-workspace 5; }
+    Mod+6 			{ focus-workspace 6; }
+    Mod+7 			{ focus-workspace 7; }
+    Mod+8 			{ focus-workspace 8; }
+
+    Mod+Shift+1 		{ move-column-to-workspace 1; }
+    Mod+Shift+2 		{ move-column-to-workspace 2; }
+    Mod+Shift+3 		{ move-column-to-workspace 3; }
+    Mod+Shift+4 		{ move-column-to-workspace 4; }
+    Mod+Shift+5 		{ move-column-to-workspace 5; }
+    Mod+Shift+6 		{ move-column-to-workspace 6; }
+    Mod+Shift+7 		{ move-column-to-workspace 7; }
+    Mod+Shift+8 		{ move-column-to-workspace 8; }
+
+    Mod+WheelScrollDown 	{ focus-column-right; }
+    Mod+WheelScrollUp 		{ focus-column-left; }
+    Mod+Shift+WheelScrollDown 	{ move-column-right; }
+    Mod+Shift+WheelScrollUp 	{ move-column-left; }
+
+    Mod+R 			{ switch-preset-column-width; }
+    Mod+Shift+F 		{ maximize-column; }
+    Mod+F 			{ fullscreen-window; }
+    Mod+C 			{ center-column; }
+
+    Mod+Ctrl+S 			{ spawn "flameshot" "gui"; }
+    Mod+Shift+S 		{ screenshot; }
+    Mod+Shift+D			{ spawn-sh "noctalia msg screenshot-region" ; }
+    Alt+Shift+2			{ screenshot-window; }
+    Alt+Shift+3			{ screenshot-screen; }
+    Alt+Redo			{ screenshot-window; }
+    Redo			{ screenshot-screen; }
+
+    Mod+0			{ spawn "thfn-gtk" "c"; }	    
+    Mod+9			{ spawn "thfn-gtk" "f"; }
+    Mod+Minus			{ spawn "thfn-gtk"; }
+
+    Mod+Shift+P 		{ quit; }
+}
+
+    screenshot-path "~/Pictures/Screenshot/%d-%m-%y %H-%M-%S.png"
+
+cursor {
+    xcursor-theme "Remus-White"
+    xcursor-size 24
+}
+
+
+environment {
+        XCURSOR_THEME "Remus-White"
+	QT_QPA_PLATFORM "wayland"
+	QT_QPA_PLATFORMTHEME "qt6ct"
+    	MOZ_ENABLE_WAYLAND "1"
+    	XDG_SESSION_TYPE "wayland"
+    	XDG_CURRENT_DESKTOP "niri"
+    	XDG_SESSION_DESKTOP "niri"
+    	MOZ_DBUS_REMOTE "1"
+    	GDK_BACKEND "wayland"
+	}
+
+layout {
+    	gaps 6
+	center-focused-column "on-overflow"
+    	always-center-single-column
+	background-color "transparent"
+
+
+ border {
+        on
+        width 2
+        active-color "#595959"
+        inactive-color "#167188"
+        urgent-color "#9b0000"
+    }
+focus-ring {
+	off
+        width 2
+        active-color "#595959"
+        inactive-color "#167188"
+        urgent-color "#9b0000"
+
+    }
+
+
+default-column-width {
+        	proportion 0.5
+}
+
+preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+preset-window-heights {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+}
+input {
+    keyboard {
+	   xkb {
+            layout "us,ru"
+            options "grp:caps_toggle"
+	}
+}
+
+mouse {
+	accel-speed -0.4
+        accel-profile "flat"
+	}
+
+touchpad {
+	tap
+	disabled-on-external-mouse
+	//dwt
+	accel-speed 0.4
+        accel-profile "flat"
+	drag true
+
+natural-scroll
+	} 
+
+focus-follows-mouse max-scroll-amount="0%"
+}
+
+
+debug {
+   //render-drm-device "/dev/dri/renderD129"	//nvidia only
+    //ignore-drm-device "/dev/dri/renderD129"	//intel+nvidia
+}
+
+prefer-no-csd
+gestures {
+
+    hot-corners {
+         off
+    }
+}
+clipboard {
+	disable-primary 
+}
+
+recent-windows {
+        highlight {
+        corner-radius 12
+        }
+}
+hotkey-overlay {
+    		skip-at-startup
+}
+
+	workspace "1" {
+		open-on-output "HDMI-A-1"
+	}
+	workspace "2" {
+		open-on-output "HDMI-A-1"
+	}
+	workspace "3" {
+		open-on-output "HDMI-A-1"
+	}
+	workspace "4" {
+		open-on-output "HDMI-A-1"
+	}
+	workspace "5" {
+		open-on-output "HDMI-A-1"
+	}
+
+output "HDMI-A-1" {
+    mode "1920x1080@60.000"
+    scale 1
+    position x=0 y=0
+    focus-at-startup
+}
+
+output "eDP-1" {
+    mode "1920x1080@60.003"
+    scale 1
+    position x=0 y=0
+}
+
+include "wrule.kdl"
+
+
+include "noctalia.kdl"

@@ -1,1025 +1,851 @@
 #!/usr/bin/env bash
+#
+# Arch Linux + niri dotfiles installer.
+#
+#   packages/*.txt  package groups: official repos first, AUR as a fallback
+#   .config/*       symlinked into ~/.config (whatever was there is backed up)
+#
+# ./install.sh --help for options.
 
-# Install Arch Linux dotfiles for niri, PipeWire, portals, GTK and fish.
 set -Eeuo pipefail
+shopt -s nullglob
 
-REPO_URL="https://github.com/octavich/.dotfile.git"
+REPO_URL="${REPO_URL:-https://github.com/octavich/.dotfile.git}"
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfile}"
-INSTALL_OPTIONAL_AUR="${INSTALL_OPTIONAL_AUR:-0}"
-AUR_SKIP_REVIEW="${AUR_SKIP_REVIEW:-0}"
-NVIDIA_MODE="${NVIDIA_MODE:-auto}"
-NVIDIA_DRIVER="${NVIDIA_DRIVER:-open}"
-SESSION_MODE="${SESSION_MODE:-greetd}"
-CHECK_ONLY="${CHECK_ONLY:-0}"
-UNINSTALL_ONLY="${UNINSTALL_ONLY:-0}"
-SUDO_KEEPALIVE_PID=""
-export EDITOR="${EDITOR:-micro}"
-export VISUAL="${VISUAL:-micro}"
+BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/dotfile/backup"
+STAMP="$(date +%Y%m%d-%H%M%S)"
+NVIDIA_DRIVER="${NVIDIA_DRIVER:-nvidia-open-dkms}"
+REMUS_URL="https://www.gnome-look.org/p/2355234"
 
-installed_successfully=()
-skipped_optional=()
-failed_optional=()
-failed_required=()
-post_install_notes=()
+# Kept in the repo, never linked into ~/.config.
+LINK_EXCLUDE=(archive)
 
-usage() {
-    cat <<'EOF'
-Usage: ./install.sh [options]
+# Own programs referenced by niri/config.kdl that no package provides.
+CUSTOM_APPS=(thfn-gtk translator-gtk calc-gtk currency-gtk /usr/local/bin/ytdl-gtk)
 
-Options:
-  --with-optional-aur         Install optional AUR packages, including pwvucontrol.
-  --nvidia                    Force NVIDIA package installation and modeset setup.
-  --no-nvidia                 Skip NVIDIA package installation and modeset setup.
-  --nvidia-driver=open        Use nvidia-open. This is the default for modern GPUs.
-  --nvidia-driver=proprietary Use the proprietary nvidia package.
-  --session=greetd            Configure greetd + tuigreet. This is the default.
-  --session=tty               Keep tty1 fish autostart flow and disable greetd.
-  --check                     Run preflight checks only; do not change the system.
-  --uninstall-configs         Uninstall and restore config files only (leaves packages installed).
-  -h, --help                  Show this help.
+DRY_RUN=0
+DO_PACKAGES=1
+DO_CONFIGS=1
+DO_UNLINK=0
+SKIP_REVIEW="${SKIP_REVIEW:-0}"
+GPU="${GPU:-auto}"
+ONLY_GROUPS=""
+SKIP_GROUPS=""
 
-Environment:
-  INSTALL_OPTIONAL_AUR=1
-  AUR_SKIP_REVIEW=1
-  NVIDIA_MODE=auto|yes|no
-  NVIDIA_DRIVER=open|proprietary
-  SESSION_MODE=greetd|tty
-EOF
+REPO_DIR=""
+AUR_HELPER=""
+SUDO_PID=""
+GPU_VENDORS=""
+MULTILIB_PENDING=0
+declare -A REPO_SET=()
+
+ok_list=()
+warn_list=()
+fail_list=()
+note_list=()
+
+if [[ -t 1 ]]; then
+    C_BOLD=$'\e[1m' C_YELLOW=$'\e[33m' C_RED=$'\e[31m' C_RESET=$'\e[0m'
+else
+    C_BOLD="" C_YELLOW="" C_RED="" C_RESET=""
+fi
+
+step() { printf '\n%s==> %s%s\n' "$C_BOLD" "$*" "$C_RESET"; }
+info() { printf '    %s\n' "$*"; }
+ok()   { ok_list+=("$*"); }
+warn() { printf '%sWARN:%s %s\n' "$C_YELLOW" "$C_RESET" "$*" >&2; warn_list+=("$*"); }
+fail() { printf '%sFAIL:%s %s\n' "$C_RED" "$C_RESET" "$*" >&2; fail_list+=("$*"); }
+note() { note_list+=("$*"); }
+die()  { printf '%sERROR:%s %s\n' "$C_RED" "$C_RESET" "$*" >&2; exit 1; }
+
+# Run a command, or only print it with --dry-run.
+run() {
+    if [[ $DRY_RUN == 1 ]]; then
+        printf '    [dry-run]'
+        printf ' %q' "$@"
+        printf '\n'
+        return 0
+    fi
+    "$@"
 }
 
-log_info() {
-    printf '\n==> %s\n' "$*"
+# write_root_file <path> <content>
+write_root_file() {
+    if [[ $DRY_RUN == 1 ]]; then
+        info "[dry-run] write $1"
+        return 0
+    fi
+    sudo install -d -m 0755 "$(dirname "$1")"
+    printf '%s\n' "$2" | sudo tee "$1" >/dev/null
 }
 
-log_warn() {
-    printf 'WARN: %s\n' "$*" >&2
-}
-
-log_error() {
-    printf 'ERROR: %s\n' "$*" >&2
-}
-
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-# shellcheck disable=SC2317
 on_error() {
-    local exit_code=$?
-    log_error "Unexpected error on line ${BASH_LINENO[0]} (exit ${exit_code})."
-    exit "$exit_code"
+    local status=$? i trace=""
+    for ((i = 1; i < ${#FUNCNAME[@]}; i++)); do
+        trace+=" ${FUNCNAME[i]}:${BASH_LINENO[i - 1]}"
+    done
+    die "unexpected error (exit $status) at$trace"
 }
 
-# shellcheck disable=SC2317
 cleanup() {
-    if [ -n "${SUDO_KEEPALIVE_PID:-}" ]; then
-        kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+    if [[ -n $SUDO_PID ]]; then
+        kill "$SUDO_PID" 2>/dev/null || true
     fi
 }
 
 trap on_error ERR
 trap cleanup EXIT
 
-for arg in "$@"; do
-    case "$arg" in
-        --with-optional-aur)
-            INSTALL_OPTIONAL_AUR=1
-            ;;
-        --nvidia)
-            NVIDIA_MODE="yes"
-            ;;
-        --no-nvidia)
-            NVIDIA_MODE="no"
-            ;;
-        --nvidia-driver=open)
-            NVIDIA_DRIVER="open"
-            ;;
-        --nvidia-driver=proprietary)
-            NVIDIA_DRIVER="proprietary"
-            ;;
-        --session=greetd)
-            SESSION_MODE="greetd"
-            ;;
-        --session=tty)
-            SESSION_MODE="tty"
-            ;;
-        --check)
-            CHECK_ONLY=1
-            ;;
-        --uninstall-configs)
-            UNINSTALL_ONLY=1
-            ;;
-        -h|--help)
-            usage
-            exit 0
-            ;;
-        *)
-            log_error "Unknown argument: $arg"
-            usage
-            exit 1
-            ;;
-    esac
-done
+# ---------------------------------------------------------------- arguments
 
-if [ "$EUID" -eq 0 ]; then
-    log_error "Do not run this script with sudo/root. It will ask for sudo when needed."
-    exit 1
-fi
+group_name() {
+    local name=${1##*/}
+    name=${name%.txt}
+    printf '%s\n' "${name#[0-9]*-}"
+}
 
-if [ "$NVIDIA_MODE" != "auto" ] && [ "$NVIDIA_MODE" != "yes" ] && [ "$NVIDIA_MODE" != "no" ]; then
-    log_error "NVIDIA_MODE must be auto, yes or no."
-    exit 1
-fi
+# Groups from packages/*.txt plus the detected GPU drivers.
+list_groups() {
+    local file
+    for file in "$REPO_DIR"/packages/*.txt; do
+        group_name "$file"
+    done
+    printf '%s\n' gpu
+}
 
-if [ "$NVIDIA_DRIVER" != "open" ] && [ "$NVIDIA_DRIVER" != "proprietary" ]; then
-    log_error "NVIDIA_DRIVER must be open or proprietary."
-    exit 1
-fi
+usage() {
+    local groups="(see packages/)"
+    if [[ -n $REPO_DIR ]]; then
+        groups=$(list_groups | paste -sd ' ')
+    fi
+    cat <<EOF
+Usage: ./install.sh [options]
 
-if [ "$SESSION_MODE" != "greetd" ] && [ "$SESSION_MODE" != "tty" ]; then
-    log_error "SESSION_MODE must be greetd or tty."
-    exit 1
-fi
+  -n, --dry-run        Show what would be done, change nothing.
+      --only=G1,G2     Install only these package groups.
+      --skip=G1,G2     Skip these package groups.
+      --no-packages    Only link configs.
+      --no-configs     Only install packages.
+      --gpu=LIST       GPU drivers (group "gpu"): auto (default), none, or e.g. intel,nvidia.
+  -y, --yes            Do not stop to review AUR PKGBUILDs.
+      --unlink         Remove the config symlinks and restore backups.
+  -h, --help           Show this help.
 
-if [ "$AUR_SKIP_REVIEW" != "0" ] && [ "$AUR_SKIP_REVIEW" != "1" ]; then
-    log_error "AUR_SKIP_REVIEW must be 0 or 1."
-    exit 1
-fi
+Package groups: $groups
 
-preflight_checks() {
-    log_info "Running preflight checks"
+Environment: DOTFILES_DIR (default ~/.dotfile), NVIDIA_DRIVER (default nvidia-open-dkms).
+EOF
+}
 
-    if [ -r /etc/os-release ]; then
-        # shellcheck disable=SC1091
-        . /etc/os-release
-        if [ "${ID:-}" != "arch" ] && [[ " ${ID_LIKE:-} " != *" arch "* ]]; then
-            log_error "This installer targets Arch Linux. Detected ID=${ID:-unknown}."
-            failed_required+=("preflight:arch-linux")
+parse_args() {
+    local arg
+    for arg in "$@"; do
+        case $arg in
+            -n|--dry-run) DRY_RUN=1 ;;
+            --only=*) ONLY_GROUPS=${arg#*=} ;;
+            --skip=*) SKIP_GROUPS=${arg#*=} ;;
+            --no-packages) DO_PACKAGES=0 ;;
+            --no-configs) DO_CONFIGS=0 ;;
+            --gpu=*) GPU=${arg#*=} ;;
+            -y|--yes) SKIP_REVIEW=1 ;;
+            --unlink) DO_UNLINK=1 ;;
+            -h|--help) usage; exit 0 ;;
+            *) usage >&2; die "unknown option: $arg" ;;
+        esac
+    done
+}
+
+# ---------------------------------------------------------------- repo
+
+# Sets REPO_DIR when the script runs from a checkout of the repo.
+find_local_repo() {
+    local self=${BASH_SOURCE[0]:-} dir
+    if [[ -n $self && -f $self ]]; then
+        dir=$(cd "$(dirname "$self")" && pwd -P)
+        if [[ -d $dir/.config && -d $dir/packages ]]; then
+            REPO_DIR=$dir
         fi
+    fi
+}
+
+# Started through curl: fetch the repo, then re-run the installer from it.
+bootstrap() {
+    step "Fetching dotfiles into $DOTFILES_DIR"
+    if ! command -v git >/dev/null; then
+        sudo pacman -S --needed --noconfirm git
+    fi
+    if [[ -d $DOTFILES_DIR/.git ]]; then
+        git -C "$DOTFILES_DIR" pull --ff-only || warn "could not update $DOTFILES_DIR, using it as is"
+    elif [[ -e $DOTFILES_DIR ]]; then
+        die "$DOTFILES_DIR exists but is not a git repo; move it away or set DOTFILES_DIR"
     else
-        log_error "/etc/os-release is missing."
-        failed_required+=("preflight:os-release")
+        git clone "$REPO_URL" "$DOTFILES_DIR"
     fi
-
-    if [ "$EUID" -eq 0 ]; then
-        log_error "Do not run this script with sudo/root."
-        failed_required+=("preflight:not-root")
+    # With `curl | bash` stdin is the script itself; hand the terminal back for prompts.
+    if [[ ! -t 0 ]] && { : </dev/tty; } 2>/dev/null; then
+        exec bash "$DOTFILES_DIR/install.sh" "$@" </dev/tty
     fi
-
-    if ! command_exists sudo; then
-        log_error "sudo is required."
-        failed_required+=("preflight:sudo")
-    elif [ "$CHECK_ONLY" = "1" ] && ! sudo -n true >/dev/null 2>&1; then
-        log_warn "sudo exists, but passwordless validation failed during --check. The real install may prompt for a password."
-    fi
-
-    if ! command_exists pacman; then
-        log_error "pacman is required."
-        failed_required+=("preflight:pacman")
-    fi
-
-    if ! command_exists systemctl || [ ! -d /run/systemd/system ]; then
-        log_error "A systemd-booted Arch system is required."
-        failed_required+=("preflight:systemd")
-    fi
-
-    if command_exists ping; then
-        ping -c 1 -W 3 archlinux.org >/dev/null 2>&1 || log_warn "Network check failed: archlinux.org is unreachable."
-    elif command_exists curl; then
-        curl -fsI https://archlinux.org >/dev/null 2>&1 || log_warn "Network check failed: archlinux.org is unreachable."
-    else
-        log_warn "Neither ping nor curl is available for a network check."
-    fi
-
-    if ! command_exists git; then
-        log_warn "git is not installed yet; pacman will install it."
-    fi
+    exec bash "$DOTFILES_DIR/install.sh" "$@"
 }
 
-start_sudo_keepalive() {
-    sudo -v
-    while true; do
-        sudo -n true
-        sleep 60
-    done 2>/dev/null &
-    SUDO_KEEPALIVE_PID=$!
-}
+# ---------------------------------------------------------------- system
 
-record_package_result() {
-    local package_scope=$1
-    local package_name=$2
-    local status=$3
-
-    case "$status" in
-        success)
-            installed_successfully+=("$package_scope:$package_name")
-            ;;
-        skipped_optional)
-            skipped_optional+=("$package_scope:$package_name")
-            ;;
-        failed_optional)
-            failed_optional+=("$package_scope:$package_name")
-            ;;
-        failed_required)
-            failed_required+=("$package_scope:$package_name")
-            ;;
-    esac
-}
-
-pacman_package_exists() {
-    pacman -Si "$1" >/dev/null 2>&1
-}
-
-install_pacman_packages() {
-    local package_scope=$1
-    shift
-
-    local package_name
-    for package_name in "$@"; do
-        if ! pacman_package_exists "$package_name"; then
-            if [ "$package_scope" = "required" ]; then
-                log_error "Required pacman package is not available: $package_name"
-                record_package_result "pacman" "$package_name" "failed_required"
-            else
-                log_warn "Optional pacman package is not available: $package_name"
-                record_package_result "pacman" "$package_name" "failed_optional"
-            fi
-            continue
-        fi
-
-        log_info "Installing pacman package: $package_name"
-        if sudo pacman -S --needed --noconfirm "$package_name"; then
-            record_package_result "pacman" "$package_name" "success"
-        elif [ "$package_scope" = "required" ]; then
-            log_error "Failed to install required pacman package: $package_name"
-            record_package_result "pacman" "$package_name" "failed_required"
-        else
-            log_warn "Failed to install optional pacman package: $package_name"
-            record_package_result "pacman" "$package_name" "failed_optional"
-        fi
+preflight() {
+    step "Preflight"
+    local os
+    # shellcheck disable=SC1091
+    os=$(. /etc/os-release 2>/dev/null && printf '%s %s' "${ID:-}" "${ID_LIKE:-}") || true
+    if [[ " $os " != *" arch "* ]]; then
+        die "this installer is for Arch Linux (detected: ${os:-unknown})"
+    fi
+    local cmd
+    for cmd in pacman sudo curl; do
+        command -v "$cmd" >/dev/null || die "$cmd is required"
     done
+    if [[ ! -d /run/systemd/system ]]; then
+        warn "systemd is not running; services will not be enabled"
+    fi
+    if ! curl -fsI --max-time 10 https://archlinux.org >/dev/null 2>&1; then
+        warn "archlinux.org is not reachable; check the network"
+    fi
+    info "repo: $REPO_DIR"
 }
 
-ensure_paru() {
-    if command_exists paru; then
+start_sudo() {
+    if [[ $DRY_RUN == 1 ]]; then
         return 0
     fi
-
-    log_info "Installing paru AUR helper"
-    local build_root
-    build_root=$(mktemp -d)
-
-    if ! git clone https://aur.archlinux.org/paru.git "$build_root/paru"; then
-        rm -rf "$build_root"
-        return 1
-    fi
-
-    if ! (cd "$build_root/paru" && makepkg -si --noconfirm); then
-        rm -rf "$build_root"
-        return 1
-    fi
-
-    rm -rf "$build_root"
-}
-
-paru_args() {
-    local args=(-S --needed --noconfirm)
-
-    if [ "$AUR_SKIP_REVIEW" = "1" ]; then
-        args+=(--skipreview)
-    fi
-
-    printf '%s\n' "${args[@]}"
-}
-
-install_aur_packages() {
-    local package_scope=$1
-    shift
-
-    if [ "$#" -eq 0 ]; then
-        return 0
-    fi
-
-    if ! ensure_paru; then
-        log_error "paru is required for AUR packages but could not be installed."
-        local package_name
-        for package_name in "$@"; do
-            if [ "$package_scope" = "required" ]; then
-                record_package_result "aur" "$package_name" "failed_required"
-            else
-                record_package_result "aur" "$package_name" "failed_optional"
-            fi
-        done
-        return 0
-    fi
-
-    local package_name
-    for package_name in "$@"; do
-        local args
-        mapfile -t args < <(paru_args)
-
-        log_info "Installing AUR package: $package_name"
-        if EDITOR=micro VISUAL=micro paru "${args[@]}" "$package_name"; then
-            record_package_result "aur" "$package_name" "success"
-        elif [ "$package_scope" = "required" ]; then
-            log_error "Failed to install required AUR package: $package_name"
-            record_package_result "aur" "$package_name" "failed_required"
-        else
-            log_warn "Failed to install optional AUR package: $package_name"
-            record_package_result "aur" "$package_name" "failed_optional"
-        fi
-    done
-}
-
-enable_user_services() {
-    local services=("$@")
-
-    if ! command_exists systemctl; then
-        log_warn "systemctl not found; cannot enable user services now."
-        post_install_notes+=("Run after login: systemctl --user enable --now ${services[*]}")
-        return 0
-    fi
-
-    if ! systemctl --user show-environment >/dev/null 2>&1; then
-        log_warn "systemd user session is not available; user services were not enabled now."
-        post_install_notes+=("Run after first graphical login: systemctl --user enable --now ${services[*]}")
-        return 0
-    fi
-
-    local service_name
-    for service_name in "${services[@]}"; do
-        log_info "Enabling user service: $service_name"
-        if systemctl --user enable --now "$service_name"; then
-            installed_successfully+=("systemd-user:$service_name")
-        else
-            log_warn "Failed to enable user service now: $service_name"
-            failed_optional+=("systemd-user:$service_name")
-            post_install_notes+=("Retry: systemctl --user enable --now $service_name")
-        fi
-    done
+    sudo -v || die "sudo authentication failed"
+    (while sleep 50; do sudo -n true 2>/dev/null || exit 0; done) &
+    SUDO_PID=$!
 }
 
 enable_multilib() {
-    local pacman_conf="/etc/pacman.conf"
-    local tmp_file
-
-    log_info "Ensuring pacman multilib repository is enabled"
-
-    if [ ! -f "$pacman_conf" ]; then
-        failed_required+=("pacman:pacman.conf")
+    local conf=/etc/pacman.conf
+    if grep -q '^\[multilib\]' "$conf"; then
         return 0
     fi
-
-    if awk '
-        /^\[multilib\]/ { in_multilib = 1; found = 1; next }
-        /^\[/ { in_multilib = 0 }
-        in_multilib && /^Include[[:space:]]*=[[:space:]]*\/etc\/pacman\.d\/mirrorlist/ { include = 1 }
-        END { exit !(found && include) }
-    ' "$pacman_conf"; then
-        log_info "multilib is already enabled"
-        return 0
-    fi
-
-    tmp_file=$(mktemp)
-    awk '
-        BEGIN { in_multilib = 0; found = 0 }
-        /^[[:space:]]*#\[multilib\]/ {
-            print "[multilib]"
-            in_multilib = 1
-            found = 1
-            next
-        }
-        /^\[multilib\]/ {
-            print
-            in_multilib = 1
-            found = 1
-            next
-        }
-        in_multilib && /^[[:space:]]*#Include[[:space:]]*=[[:space:]]*\/etc\/pacman\.d\/mirrorlist/ {
-            print "Include = /etc/pacman.d/mirrorlist"
-            in_multilib = 0
-            next
-        }
-        /^\[/ { in_multilib = 0 }
-        { print }
-        END {
-            if (found == 0) {
-                print ""
-                print "[multilib]"
-                print "Include = /etc/pacman.d/mirrorlist"
-            }
-        }
-    ' "$pacman_conf" > "$tmp_file"
-
-    sudo install -m 0644 "$tmp_file" "$pacman_conf"
-    rm -f "$tmp_file"
-
-    if sudo pacman -Sy --noconfirm; then
-        installed_successfully+=("pacman:multilib")
+    step "Enabling [multilib]"
+    MULTILIB_PENDING=1
+    run sudo cp "$conf" "$conf.dotfile.bak"
+    if grep -q '^#\[multilib\]$' "$conf"; then
+        run sudo sed -i '/^#\[multilib\]$/{s/^#//;n;s/^#Include/Include/}' "$conf"
     else
-        failed_required+=("pacman:multilib-sync")
+        run sudo sh -c "printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >> $conf"
+    fi
+    ok "pacman: [multilib] enabled (backup: $conf.dotfile.bak)"
+}
+
+system_upgrade() {
+    step "Updating the system"
+    run sudo pacman -Sy --needed --noconfirm archlinux-keyring || die "pacman -Sy failed"
+    run sudo pacman -Su --noconfirm || die "system upgrade failed; fix it and run the installer again"
+    run sudo pacman -S --needed --noconfirm base-devel git || die "could not install base-devel and git"
+    if [[ $DRY_RUN == 0 ]]; then
+        MULTILIB_PENDING=0
     fi
 }
 
-install_greetd_niri_session_wrapper() {
-    local tmp_script
-    tmp_script=$(mktemp)
+ensure_aur_helper() {
+    local helper
+    for helper in paru yay; do
+        if command -v "$helper" >/dev/null; then
+            AUR_HELPER=$helper
+            return 0
+        fi
+    done
 
-    cat > "$tmp_script" <<'EOF'
-#!/usr/bin/env bash
-
-set -Eeuo pipefail
-
-export XDG_CURRENT_DESKTOP=niri
-export XDG_SESSION_DESKTOP=niri
-export XDG_SESSION_TYPE=wayland
-unset DISPLAY
-
-if command -v systemd-cat >/dev/null 2>&1; then
-    exec systemd-cat --identifier=dotfile-niri-session niri-session
-fi
-
-exec niri-session
-EOF
-
-    sudo install -D -m 0755 "$tmp_script" /usr/local/bin/dotfile-niri-session
-    rm -f "$tmp_script"
-    installed_successfully+=("config:/usr/local/bin/dotfile-niri-session")
-}
-
-clear_tuigreet_session_cache() {
-    if [ ! -d /var/cache/tuigreet ]; then
+    step "Installing paru (AUR helper)"
+    if [[ $DRY_RUN == 1 ]]; then
+        info "[dry-run] build paru-bin from the AUR"
+        AUR_HELPER=paru
         return 0
     fi
-
-    if sudo find /var/cache/tuigreet -mindepth 1 -maxdepth 1 -type f -name '*session*' -delete; then
-        installed_successfully+=("config:/var/cache/tuigreet session cache cleared")
-    else
-        log_warn "Failed to clear tuigreet session cache."
-        failed_optional+=("config:tuigreet-session-cache")
-    fi
+    local pkg tmp
+    for pkg in paru-bin paru; do
+        if pacman -Q paru-bin >/dev/null 2>&1; then
+            # paru-bin is installed but broken (e.g. libalpm bump): replace it.
+            sudo pacman -Rdd --noconfirm paru-bin || true
+        fi
+        tmp=$(mktemp -d)
+        if git clone --depth 1 "https://aur.archlinux.org/$pkg.git" "$tmp/$pkg" &&
+            (cd "$tmp/$pkg" && makepkg -si --noconfirm) &&
+            paru --version >/dev/null 2>&1; then
+            rm -rf "$tmp"
+            AUR_HELPER=paru
+            ok "aur helper: $pkg"
+            return 0
+        fi
+        rm -rf "$tmp"
+        warn "could not install $pkg"
+    done
+    fail "no AUR helper available; AUR packages are skipped"
 }
 
-configure_greetd_session() {
-    log_info "Configuring greetd + tuigreet"
+# ---------------------------------------------------------------- packages
 
-    if ! command_exists systemctl; then
-        failed_required+=("session:systemctl")
+group_selected() {
+    local group=$1
+    if [[ -n $ONLY_GROUPS && ",$ONLY_GROUPS," != *",$group,"* ]]; then
+        return 1
+    fi
+    [[ ",$SKIP_GROUPS," != *",$group,"* ]]
+}
+
+check_group_names() {
+    local known group
+    known=",$(list_groups | paste -sd ','),"
+    for group in ${ONLY_GROUPS//,/ } ${SKIP_GROUPS//,/ }; do
+        if [[ $known != *",$group,"* ]]; then
+            die "unknown package group: $group (available: ${known:1:-1})"
+        fi
+    done
+}
+
+# Package specs from a group file, any number per line. `a|b` means: the first
+# one found in the official repos, otherwise the first one found in the AUR.
+read_specs() {
+    sed -e 's/#.*//' "$1" | tr -s ' \t' '\n' | sed '/^$/d'
+}
+
+has_vendor() {
+    [[ ",$GPU_VENDORS," == *",$1,"* ]]
+}
+
+detect_gpu_vendors() {
+    if [[ $GPU != auto ]]; then
+        GPU_VENDORS=${GPU/none/}
         return 0
     fi
-
-    install_greetd_niri_session_wrapper
-    clear_tuigreet_session_cache
-
-    local tmp_config
-    tmp_config=$(mktemp)
-    cat > "$tmp_config" <<'EOF'
-[terminal]
-vt = 1
-
-[default_session]
-command = "tuigreet --time --asterisks --remember --cmd /usr/local/bin/dotfile-niri-session"
-user = "greeter"
-EOF
-
-    sudo install -d -m 0755 /etc/greetd
-    sudo install -m 0644 "$tmp_config" /etc/greetd/config.toml
-    rm -f "$tmp_config"
-    installed_successfully+=("config:/etc/greetd/config.toml")
-
-    if sudo systemctl enable greetd.service; then
-        installed_successfully+=("systemd:greetd.service")
-    else
-        failed_required+=("systemd:greetd.service")
-    fi
-
-    if sudo systemctl set-default graphical.target; then
-        installed_successfully+=("systemd:graphical.target")
-    else
-        failed_optional+=("systemd:graphical.target")
-    fi
-
-    post_install_notes+=("Reboot; greetd/tuigreet will start /usr/local/bin/dotfile-niri-session.")
+    local dev class vendor
+    for dev in /sys/bus/pci/devices/*; do
+        [[ -r $dev/class && -r $dev/vendor ]] || continue
+        class=$(<"$dev/class")
+        vendor=$(<"$dev/vendor")
+        [[ $class == 0x03* ]] || continue
+        case $vendor in
+            0x8086) GPU_VENDORS+=",intel" ;;
+            0x1002) GPU_VENDORS+=",amd" ;;
+            0x10de) GPU_VENDORS+=",nvidia" ;;
+        esac
+    done
+    GPU_VENDORS=${GPU_VENDORS#,}
 }
 
-configure_tty_session() {
-    log_info "Configuring tty session mode"
+gpu_specs() {
+    if has_vendor intel; then
+        printf '%s\n' mesa vulkan-intel lib32-vulkan-intel intel-media-driver
+    fi
+    if has_vendor amd; then
+        printf '%s\n' mesa vulkan-radeon lib32-vulkan-radeon
+    fi
+    if has_vendor nvidia; then
+        # Legacy branches (nvidia-580xx-dkms) need their matching utils.
+        local branch=""
+        if [[ $NVIDIA_DRIVER =~ ^nvidia-([0-9]+xx)- ]]; then
+            branch=-${BASH_REMATCH[1]}
+        fi
+        printf '%s\n' "$NVIDIA_DRIVER" "nvidia$branch-utils" "lib32-nvidia$branch-utils" libva-nvidia-driver
+        if [[ $NVIDIA_DRIVER == *-dkms ]]; then
+            # DKMS needs headers for every installed kernel.
+            local kernel
+            while read -r kernel; do
+                case $kernel in
+                    *-headers|*-firmware*|*-docs) continue ;;
+                esac
+                if [[ -n ${REPO_SET[$kernel-headers]+x} ]]; then
+                    printf '%s\n' "$kernel-headers"
+                fi
+            done < <(pacman -Qq 2>/dev/null | grep -E '^linux' || true)
+        fi
+    fi
+}
 
-    if command_exists systemctl; then
-        sudo systemctl disable greetd.service >/dev/null 2>&1 || true
-        if sudo systemctl set-default multi-user.target; then
-            installed_successfully+=("systemd:multi-user.target")
+load_repo_set() {
+    local name
+    REPO_SET=()
+    while read -r name; do
+        if [[ -n $name ]]; then
+            REPO_SET[$name]=1
+        fi
+    done < <(pacman -Slq 2>/dev/null || true)
+}
+
+in_repos() {
+    if [[ -n ${REPO_SET[$1]+x} ]]; then
+        return 0
+    fi
+    # [multilib] is only enabled for real later in a dry run.
+    [[ $MULTILIB_PENDING == 1 && $1 == lib32-* ]]
+}
+
+# Prints the names among "$@" that exist in the AUR (one RPC request).
+aur_lookup() {
+    local query="" name json
+    for name in "$@"; do
+        query+="&arg[]=$name"
+    done
+    json=$(curl -fsS --globoff --max-time 30 "https://aur.archlinux.org/rpc/v5/info?${query#&}") || return 1
+    grep -o '"Name":"[^"]*"' <<<"$json" | cut -d'"' -f4 || true
+}
+
+pacman_install() {
+    run sudo pacman -S --needed --noconfirm "$@"
+}
+
+aur_install() {
+    local -a flags=(-S --needed --noconfirm)
+    if [[ $AUR_HELPER == paru && $SKIP_REVIEW == 1 ]]; then
+        flags+=(--skipreview)
+    fi
+    run "$AUR_HELPER" "${flags[@]}" "$@"
+}
+
+# install_with <installer function> <label> <packages...>
+# One transaction first; if it fails, package by package to find the culprit.
+install_with() {
+    local installer=$1 label=$2 pkg
+    shift 2
+    if [[ $# -eq 0 ]]; then
+        return 0
+    fi
+    if "$installer" "$@"; then
+        for pkg in "$@"; do ok "$label: $pkg"; done
+        return 0
+    fi
+    warn "$label: batch install failed, retrying one by one"
+    for pkg in "$@"; do
+        if "$installer" "$pkg"; then
+            ok "$label: $pkg"
         else
-            failed_optional+=("systemd:multi-user.target")
+            fail "$label: $pkg"
+        fi
+    done
+}
+
+install_packages() {
+    step "Resolving packages"
+    check_group_names
+    load_repo_set
+    detect_gpu_vendors
+    info "GPU: ${GPU_VENDORS:-none}"
+
+    local -a specs=()
+    local file group
+    for file in "$REPO_DIR"/packages/*.txt; do
+        group=$(group_name "$file")
+        if group_selected "$group"; then
+            mapfile -t -O "${#specs[@]}" specs < <(read_specs "$file")
+        else
+            info "skipping group: $group"
+        fi
+    done
+    if group_selected gpu; then
+        mapfile -t -O "${#specs[@]}" specs < <(gpu_specs)
+    fi
+
+    local -a repo=() pending=() aur=() missing=() alts=()
+    local -A seen=()
+    local spec alt found
+    for spec in "${specs[@]}"; do
+        [[ -z ${seen[$spec]+x} ]] || continue
+        seen[$spec]=1
+        IFS='|' read -ra alts <<<"$spec"
+
+        found=""
+        for alt in "${alts[@]}"; do
+            if pacman -T "$alt" >/dev/null 2>&1; then
+                found=installed
+                break
+            fi
+        done
+        if [[ -n $found ]]; then
+            ok "installed: $spec"
+            continue
+        fi
+
+        for alt in "${alts[@]}"; do
+            if in_repos "$alt"; then
+                found=$alt
+                break
+            fi
+        done
+        if [[ -n $found ]]; then
+            repo+=("$found")
+        else
+            pending+=("$spec")
+        fi
+    done
+
+    if [[ ${#pending[@]} -gt 0 ]]; then
+        local -A in_aur=()
+        local -a candidates=()
+        local name names
+        for spec in "${pending[@]}"; do
+            IFS='|' read -ra alts <<<"$spec"
+            candidates+=("${alts[@]}")
+        done
+        if names=$(aur_lookup "${candidates[@]}"); then
+            for name in $names; do in_aur[$name]=1; done
+            for spec in "${pending[@]}"; do
+                found=""
+                IFS='|' read -ra alts <<<"$spec"
+                for alt in "${alts[@]}"; do
+                    if [[ -n ${in_aur[$alt]+x} ]]; then
+                        found=$alt
+                        break
+                    fi
+                done
+                if [[ -n $found ]]; then
+                    aur+=("$found")
+                else
+                    missing+=("$spec")
+                fi
+            done
+        else
+            warn "AUR is not reachable; trying the first name of each remaining package"
+            for spec in "${pending[@]}"; do aur+=("${spec%%|*}"); done
         fi
     fi
 
-    post_install_notes+=("Log into tty1; fish will exec niri-session.")
+    info "official repos (${#repo[@]}): ${repo[*]:-none}"
+    info "AUR (${#aur[@]}): ${aur[*]:-none}"
+    for spec in "${missing[@]}"; do
+        fail "package not found in repos or AUR: $spec"
+    done
+
+    step "Installing packages from the official repos"
+    install_with pacman_install repo "${repo[@]}"
+
+    if [[ ${#aur[@]} -gt 0 ]]; then
+        step "Installing packages from the AUR"
+        if [[ -z $AUR_HELPER ]]; then
+            for spec in "${aur[@]}"; do fail "aur: $spec (no AUR helper)"; done
+        else
+            install_with aur_install aur "${aur[@]}"
+        fi
+    fi
 }
 
-configure_session_startup() {
-    case "$SESSION_MODE" in
-        greetd)
-            configure_greetd_session
-            ;;
-        tty)
-            configure_tty_session
-            ;;
-    esac
+configure_nvidia() {
+    if ! has_vendor nvidia || ! group_selected gpu; then
+        return 0
+    fi
+    step "NVIDIA"
+    # niri wiki: stop the driver from keeping freed VRAM in niri's heap.
+    local profile=/etc/nvidia/nvidia-application-profiles-rc.d/50-limit-free-buffer-pool-in-wayland-compositors.json
+    if [[ ! -f $profile ]]; then
+        write_root_file "$profile" '{
+    "rules": [
+        {
+            "pattern": { "feature": "procname", "matches": "niri" },
+            "profile": "Limit Free Buffer Pool On Wayland Compositors"
+        }
+    ],
+    "profiles": [
+        {
+            "name": "Limit Free Buffer Pool On Wayland Compositors",
+            "settings": [ { "key": "GLVidHeapReuseRatio", "value": 0 } ]
+        }
+    ]
+}'
+        ok "nvidia: niri VRAM profile"
+    fi
+    # Arch wiki: without the kms hook nouveau cannot grab the GPU in early boot.
+    local conf=/etc/mkinitcpio.conf
+    if grep -Eq '^HOOKS=.*\bkms\b' "$conf" 2>/dev/null; then
+        run sudo cp "$conf" "$conf.dotfile.bak"
+        run sudo sed -i -E '/^HOOKS=/ { s/\bkms\b//; s/\( +/(/; s/ +\)/)/; s/ {2,}/ /g }' "$conf"
+        if run sudo mkinitcpio -P; then
+            ok "nvidia: removed kms hook, initramfs rebuilt"
+        else
+            fail "nvidia: mkinitcpio -P failed"
+        fi
+    fi
+    note "NVIDIA: reboot to load the new driver"
 }
 
-detect_nvidia_gpu() {
-    if [ "$NVIDIA_MODE" = "yes" ]; then
+configure_thinkpad() {
+    if [[ ! -e /proc/acpi/ibm/fan ]] || grep -qsr 'fan_control=1' /etc/modprobe.d/; then
         return 0
     fi
+    step "ThinkPad fan control (niri/thfn_)"
+    write_root_file /etc/modprobe.d/thinkpad_acpi.conf 'options thinkpad_acpi fan_control=1'
+    ok "thinkpad_acpi: fan_control=1"
+    note "ThinkPad fan control works after a reboot"
+}
 
-    if [ "$NVIDIA_MODE" = "no" ]; then
-        return 1
-    fi
-
-    if command_exists lspci && lspci | grep -Ei 'nvidia|3d controller|vga' | grep -qi nvidia; then
+enable_services() {
+    if [[ ! -d /run/systemd/system ]]; then
         return 0
     fi
+    if pacman -Q bluez >/dev/null 2>&1 && ! systemctl is-enabled --quiet bluetooth.service 2>/dev/null; then
+        if run sudo systemctl enable --now bluetooth.service; then
+            ok "systemd: bluetooth.service"
+        else
+            warn "could not enable bluetooth.service"
+        fi
+    fi
+}
 
-    if [ -d /sys/bus/pci/devices ] && grep -Rqi '^0x10de$' /sys/bus/pci/devices/*/vendor 2>/dev/null; then
+# ---------------------------------------------------------------- configs
+
+backup_path() {
+    local target=$1 dest
+    dest="$BACKUP_ROOT/$STAMP/${target#"$HOME"/}"
+    if run mkdir -p "$(dirname "$dest")" && run mv "$target" "$dest"; then
+        info "backed up $target -> $dest"
         return 0
     fi
-
     return 1
 }
 
-rebuild_initramfs_if_available() {
-    if command_exists mkinitcpio; then
-        log_info "Rebuilding initramfs with mkinitcpio"
-        if sudo mkinitcpio -P; then
-            installed_successfully+=("nvidia:mkinitcpio")
-        else
-            failed_required+=("nvidia:mkinitcpio")
-        fi
-    else
-        log_warn "mkinitcpio not found; rebuild initramfs manually if your kernel setup requires it."
-        post_install_notes+=("If NVIDIA modules do not load after reboot, rebuild initramfs for your kernel.")
-    fi
-}
-
-configure_nvidia_modeset() {
-    if ! detect_nvidia_gpu; then
-        log_info "NVIDIA GPU was not detected; skipping NVIDIA modeset setup."
+link_one() {
+    local src=$1 dst=$2
+    if [[ -L $dst && $(readlink "$dst") == "$src" ]]; then
+        ok "linked: ${dst/#"$HOME"/\~}"
         return 0
     fi
-
-    log_info "Configuring NVIDIA DRM modeset"
-
-    if [ -f /etc/default/grub ]; then
-        if grep -q 'nvidia-drm.modeset=1' /etc/default/grub; then
-            log_info "nvidia-drm.modeset=1 is already present in /etc/default/grub"
-        else
-            local current_value
-            local new_value
-            local tmp_file
-
-            current_value=$(grep -E '^GRUB_CMDLINE_LINUX_DEFAULT=' /etc/default/grub | head -n 1 || true)
-            current_value=${current_value#GRUB_CMDLINE_LINUX_DEFAULT=}
-            current_value=${current_value#\"}
-            current_value=${current_value%\"}
-            current_value=${current_value#\'}
-            current_value=${current_value%\'}
-            new_value="${current_value} nvidia-drm.modeset=1"
-            new_value=${new_value# }
-
-            tmp_file=$(mktemp)
-
-            awk -v new_line="GRUB_CMDLINE_LINUX_DEFAULT=\"$new_value\"" '
-                BEGIN { updated = 0 }
-                /^GRUB_CMDLINE_LINUX_DEFAULT=/ {
-                    print new_line
-                    updated = 1
-                    next
-                }
-                { print }
-                END {
-                    if (updated == 0) {
-                        print new_line
-                    }
-                }
-            ' /etc/default/grub > "$tmp_file"
-
-            sudo cp "$tmp_file" /etc/default/grub
-            rm -f "$tmp_file"
-            log_info "Added nvidia-drm.modeset=1 to /etc/default/grub"
-        fi
-
-        if command_exists grub-mkconfig; then
-            if sudo grub-mkconfig -o /boot/grub/grub.cfg; then
-                installed_successfully+=("nvidia:nvidia-drm.modeset=1")
-            else
-                failed_required+=("nvidia:grub-mkconfig")
-            fi
-        else
-            log_warn "grub-mkconfig not found; regenerate GRUB config manually."
-            post_install_notes+=("Regenerate GRUB config so nvidia-drm.modeset=1 reaches the kernel cmdline.")
-        fi
-    elif [ -d /boot/loader/entries ]; then
-        log_warn "systemd-boot detected. This script does not edit loader entries automatically."
-        post_install_notes+=("Add nvidia-drm.modeset=1 to your systemd-boot loader entry options line.")
+    if [[ -e $dst || -L $dst ]] && ! backup_path "$dst"; then
+        fail "could not back up $dst, not linked"
+        return 0
+    fi
+    if run ln -s "$src" "$dst"; then
+        ok "linked: ${dst/#"$HOME"/\~}"
     else
-        log_warn "No GRUB config or systemd-boot entries detected."
-        post_install_notes+=("Ensure your bootloader passes nvidia-drm.modeset=1 to the kernel.")
+        fail "could not link $dst"
     fi
-
-    rebuild_initramfs_if_available
 }
 
-link_path() {
-    local source_path=$1
-    local target_path=$2
-
-    mkdir -p "$(dirname "$target_path")"
-    if [ -e "$target_path" ] || [ -L "$target_path" ]; then
-        rm -rf "$target_path"
-    fi
-    ln -sfn "$source_path" "$target_path"
-    installed_successfully+=("symlink:$target_path")
-}
-
-remove_path_for_replace() {
-    local target_path=$1
-
-    if [ -z "$target_path" ] || [ "$target_path" = "/" ] || [ "$target_path" = "$HOME" ]; then
-        log_error "Refusing to remove unsafe path: ${target_path:-<empty>}"
-        return 1
-    fi
-
-    rm -rf "$target_path"
-}
-
-setup_gtk3_config() {
-    local gtk_target="$HOME/.config/gtk-3.0"
-    mkdir -p "$gtk_target"
-
-    local source_path
-    for source_path in "$DOTFILES_DIR/config/gtk-3.0/"*; do
-        local file_name
-        file_name=$(basename "$source_path")
-
-        case "$file_name" in
-            bookmarks.template)
-                sed "s|\$HOME|$HOME|g" "$source_path" > "$gtk_target/bookmarks"
-                installed_successfully+=("config:$gtk_target/bookmarks")
-                ;;
-            bookmarks)
-                ;;
-            *)
-                link_path "$source_path" "$gtk_target/$file_name"
-                ;;
-        esac
+link_configs() {
+    step "Linking configs into ~/.config"
+    run mkdir -p "$HOME/.config" || die "cannot create ~/.config"
+    local src name
+    for src in "$REPO_DIR"/.config/*; do
+        name=${src##*/}
+        if [[ " ${LINK_EXCLUDE[*]} " == *" $name "* ]]; then
+            continue
+        fi
+        link_one "$src" "$HOME/.config/$name"
     done
 }
 
-setup_symlinks() {
-    log_info "Setting up dotfile symlinks"
-    mkdir -p "$HOME/.config"
+latest_backup() {
+    local candidates=("$BACKUP_ROOT"/*/"$1")
+    if [[ ${#candidates[@]} -gt 0 ]]; then
+        printf '%s\n' "${candidates[-1]}"
+    fi
+}
 
-    local item_path
-    for item_path in "$DOTFILES_DIR/config/"*; do
-        local item_name
-        item_name=$(basename "$item_path")
-
-        case "$item_name" in
-            gtk-3.0)
-                setup_gtk3_config
-                ;;
-            xsettingsd)
-                remove_path_for_replace "$HOME/.config/xsettingsd"
-                ;;
-            *)
-                link_path "$item_path" "$HOME/.config/$item_name"
-                ;;
-        esac
+unlink_configs() {
+    step "Removing config symlinks"
+    local src name dst backup
+    for src in "$REPO_DIR"/.config/*; do
+        name=${src##*/}
+        dst=$HOME/.config/$name
+        if [[ ! -L $dst || $(readlink "$dst") != "$src" ]]; then
+            continue
+        fi
+        run rm "$dst"
+        ok "unlinked: ~/.config/$name"
+        backup=$(latest_backup ".config/$name")
+        if [[ -n $backup ]]; then
+            run mv "$backup" "$dst"
+            ok "restored: ~/.config/$name from $backup"
+        fi
     done
 }
 
-add_session_packages() {
-    if [ "$SESSION_MODE" != "greetd" ]; then
+clone_or_update() {
+    local url=$1 dir=$2
+    if [[ -d $dir/.git ]]; then
+        if run git -C "$dir" pull --ff-only -q; then
+            ok "updated: ${dir/#"$HOME"/\~}"
+        else
+            warn "could not update $dir"
+        fi
         return 0
     fi
-
-    official_required_packages+=(greetd)
-
-    if pacman_package_exists greetd-tuigreet; then
-        official_required_packages+=(greetd-tuigreet)
-    elif pacman_package_exists tuigreet; then
-        official_required_packages+=(tuigreet)
+    if [[ -d $dir && -n $(ls -A "$dir") ]]; then
+        warn "$dir exists and is not a git checkout, left alone"
+        return 0
+    fi
+    if [[ -d $dir ]] && ! run rmdir "$dir"; then
+        fail "could not replace the empty directory $dir"
+        return 0
+    fi
+    if run git clone -q --depth 1 "$url" "$dir"; then
+        ok "cloned: ${dir/#"$HOME"/\~}"
     else
-        aur_required_packages+=(greetd-tuigreet)
+        fail "git clone $url"
     fi
 }
 
-print_array() {
-    local title=$1
-    shift
-
-    printf '\n%s\n' "$title"
-    if [ "$#" -eq 0 ]; then
-        printf '  none\n'
+setup_neovim() {
+    if ! command -v nvim >/dev/null; then
         return 0
     fi
+    local data="${XDG_DATA_HOME:-$HOME/.local/share}/nvim"
+    if [[ ! -f $data/site/autoload/plug.vim ]] &&
+        ! run curl -fsSLo "$data/site/autoload/plug.vim" --create-dirs \
+            https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim; then
+        warn "vim-plug download failed"
+        return 0
+    fi
+    if [[ $DRY_RUN == 1 ]]; then
+        run nvim --headless +'PlugInstall --sync' +qa
+        return 0
+    fi
+    # nvim exits 0 either way, and the first start complains about the
+    # not yet installed colorscheme, so judge by the plugin directory.
+    timeout 300 nvim --headless +'PlugInstall --sync' +qa >/dev/null 2>&1 || true
+    if [[ -n $(ls -A "$data/plugged" 2>/dev/null) ]]; then
+        ok "nvim: plugins installed"
+    else
+        warn "nvim: PlugInstall failed, run :PlugInstall by hand"
+    fi
+}
 
+cursor_theme() {
+    sed -n 's/^[[:space:]]*xcursor-theme[[:space:]]*"\([^"]*\)".*/\1/p' "$REPO_DIR/.config/niri/config.kdl" | head -n 1
+}
+
+apply_gsettings() {
+    if ! command -v gsettings >/dev/null; then
+        return 0
+    fi
+    # Without a session bus gsettings silently writes to memory only.
+    local -a bus=()
+    if [[ -z ${DBUS_SESSION_BUS_ADDRESS:-} ]] && command -v dbus-run-session >/dev/null; then
+        bus=(dbus-run-session --)
+    fi
+    local key value cursor
+    cursor=$(cursor_theme)
+    while read -r key value; do
+        [[ -n $value ]] || continue
+        if run "${bus[@]}" gsettings set org.gnome.desktop.interface "$key" "$value" 2>/dev/null; then
+            ok "gsettings: $key=$value"
+        else
+            warn "gsettings: could not set $key"
+        fi
+    done <<EOF
+color-scheme prefer-dark
+gtk-theme adw-gtk3-dark
+cursor-theme $cursor
+cursor-size 24
+EOF
+}
+
+set_login_shell() {
+    local fish user shell
+    fish=$(command -v fish) || return 0
+    user=${USER:-$(id -un)}
+    shell=$(getent passwd "$user" | cut -d: -f7)
+    if [[ $shell == "$fish" ]]; then
+        return 0
+    fi
+    if run sudo chsh -s "$fish" "$user"; then
+        ok "login shell: fish"
+    else
+        fail "could not set fish as the login shell"
+    fi
+}
+
+check_manual_bits() {
+    local cursor dir found=0
+    cursor=$(cursor_theme)
+    for dir in "$HOME/.local/share/icons" "$HOME/.icons" /usr/share/icons; do
+        if [[ -d $dir/$cursor/cursors ]]; then
+            found=1
+        fi
+    done
+    if [[ -n $cursor && $found == 0 ]]; then
+        if [[ $cursor == Remus* ]]; then
+            note "Cursor $cursor is not on the AUR: download it from $REMUS_URL and unpack into ~/.local/share/icons/"
+        else
+            note "Cursor theme $cursor is not installed (niri/config.kdl)"
+        fi
+    fi
+
+    local app missing=()
+    for app in "${CUSTOM_APPS[@]}"; do
+        command -v "$app" >/dev/null || missing+=("${app##*/}")
+    done
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        note "Your own apps bound in niri are not installed: ${missing[*]}"
+    fi
+}
+
+setup_extras() {
+    step "Extras"
+    clone_or_update https://github.com/alexanderjeurissen/ranger_devicons "$HOME/.config/ranger/plugins/ranger_devicons"
+    clone_or_update https://github.com/maximtrp/ranger-archives "$HOME/.config/ranger/plugins/ranger-archives"
+    clone_or_update https://github.com/Ashwatthaamaa/Neuwaita "$HOME/.local/share/icons/Neuwaita"
+    setup_neovim
+
+    run mkdir -p "$HOME/Pictures/Screenshot" "$HOME/.local/share/Trash/files" || warn "could not create ~/Pictures/Screenshot"
+    if command -v xdg-user-dirs-update >/dev/null; then
+        run xdg-user-dirs-update || warn "xdg-user-dirs-update failed"
+    fi
+    if command -v fc-cache >/dev/null; then
+        run fc-cache -f || warn "fc-cache failed"
+    fi
+    apply_gsettings
+    set_login_shell
+    check_manual_bits
+}
+
+# ---------------------------------------------------------------- main
+
+summary() {
+    step "Summary"
+    info "done: ${#ok_list[@]}, warnings: ${#warn_list[@]}, failed: ${#fail_list[@]}"
     local item
-    for item in "$@"; do
-        printf '  - %s\n' "$item"
-    done
-}
-
-print_summary() {
-    printf '\n'
-    printf '========== Install summary ==========\n'
-    print_array "Installed successfully:" "${installed_successfully[@]}"
-    print_array "Skipped optional:" "${skipped_optional[@]}"
-    print_array "Failed optional:" "${failed_optional[@]}"
-    print_array "Failed required:" "${failed_required[@]}"
-    print_array "Post-install checklist:" "${post_install_notes[@]}"
-    printf '\n'
-
-    if [ "${#failed_optional[@]}" -gt 0 ]; then
-        log_warn "Optional failures were detected; installation can still be usable."
+    for item in "${warn_list[@]}"; do printf '  %sWARN%s  %s\n' "$C_YELLOW" "$C_RESET" "$item"; done
+    for item in "${fail_list[@]}"; do printf '  %sFAIL%s  %s\n' "$C_RED" "$C_RESET" "$item"; done
+    for item in "${note_list[@]}"; do printf '  NOTE  %s\n' "$item"; done
+    if [[ -d $BACKUP_ROOT/$STAMP ]]; then
+        printf '  NOTE  Old configs were moved to %s\n' "$BACKUP_ROOT/$STAMP"
+    fi
+    if [[ $DRY_RUN == 0 && $DO_UNLINK == 0 && ${#fail_list[@]} -eq 0 ]]; then
+        printf '\n  Reboot, log in on tty1 and niri starts. Check with: %s/scripts/doctor.sh\n' "$REPO_DIR"
     fi
 }
 
-uninstall_configs() {
-    log_info "Removing dotfile symlinks and configurations..."
-    
-    local item_path
-    for item_path in "$DOTFILES_DIR/config/"*; do
-        local item_name
-        item_name=$(basename "$item_path")
-        local target_path="$HOME/.config/$item_name"
-        
-        if [ -L "$target_path" ]; then
-            local link_target
-            link_target=$(readlink "$target_path" || true)
-            if [[ "$link_target" == *"$DOTFILES_DIR"* ]]; then
-                log_info "Removing symlink: $target_path"
-                rm -f "$target_path"
-            fi
-        elif [ -d "$target_path" ] && [ "$item_name" = "gtk-3.0" ]; then
-            log_info "Cleaning up gtk-3.0 configuration files"
-            for gtk_item in "$DOTFILES_DIR/config/gtk-3.0/"*; do
-                local gtk_name
-                gtk_name=$(basename "$gtk_item")
-                local gtk_target="$target_path/$gtk_name"
-                if [ -L "$gtk_target" ]; then
-                    rm -f "$gtk_target"
-                elif [ "$gtk_name" = "bookmarks.template" ] && [ -f "$target_path/bookmarks" ]; then
-                    rm -f "$target_path/bookmarks"
-                fi
-            done
-            rmdir "$target_path" 2>/dev/null || true
-        fi
-    done
-
-    rm -f "$HOME/.config/.wallpaper_set"
-
-    if command_exists systemctl && systemctl --user show-environment >/dev/null 2>&1; then
-        log_info "Disabling systemd user services..."
-        systemctl --user disable --now vicinae.service 2>/dev/null || true
+main() {
+    find_local_repo
+    parse_args "$@"
+    if [[ $EUID -eq 0 ]]; then
+        die "run as your normal user, not root; sudo is used where needed"
+    fi
+    if [[ -z $REPO_DIR ]]; then
+        bootstrap "$@"
     fi
 
-    if [ -f /usr/local/bin/dotfile-niri-session ]; then
-        log_info "Removing wrapper /usr/local/bin/dotfile-niri-session"
-        sudo rm -f /usr/local/bin/dotfile-niri-session
-    fi
-
-    if [ -f /etc/greetd/config.toml ]; then
-        if grep -q "dotfile-niri-session" /etc/greetd/config.toml; then
-            log_info "Disabling greetd service and restoring config"
-            sudo systemctl disable greetd.service 2>/dev/null || true
-            sudo rm -f /etc/greetd/config.toml
-        fi
-    fi
-
-    log_info "Configuration cleanup complete!"
-}
-
-official_required_packages=(
-    base-devel
-    git
-    curl
-    wget
-    jq
-    dbus
-    pciutils
-    awww
-    lz4
-    wayland
-    wayland-protocols
-    fish
-    niri
-    kitty
-    fastfetch
-    pipewire
-    pipewire-pulse
-    wireplumber
-    pavucontrol
-    lib32-pipewire
-    lib32-libpulse
-    lib32-alsa-plugins
-    lib32-vulkan-icd-loader
-    xdg-desktop-portal
-    xdg-desktop-portal-gtk
-    qt6-wayland
-    gtk4
-    libadwaita
-    adwaita-icon-theme
-    xorg-xwayland
-    waybar
-    starship
-    polkit-gnome
-    pipewire-alsa
-    pipewire-jack
-    matugen
-    nwg-look
-    fuzzel
-    papirus-icon-theme
-    ttf-jetbrains-mono-nerd
-    noto-fonts
-    noto-fonts-emoji
-    loupe
-    clapper
-    nautilus
-    gst-plugins-good
-    gst-plugins-bad
-    gst-plugins-ugly
-    gst-libav
-    btop
-    micro
-    wl-clipboard
-    brightnessctl
-    playerctl
-    xdg-user-dirs
-    os-prober
-    foot
-    ghostty
-    swaync
-)
-
-official_optional_packages=(
-    hyprpicker
-    flameshot
-)
-
-aur_required_packages=(
-    vicinae-bin
-    bibata-cursor-theme-bin
-    quickshell
-    noctalia-shell
-)
-
-aur_optional_packages=(
-    pwvucontrol
-)
-
-if [ "$UNINSTALL_ONLY" = "1" ]; then
-    uninstall_configs
-    exit 0
-fi
-
-preflight_checks
-
-if [ "$CHECK_ONLY" = "1" ]; then
-    post_install_notes+=("Selected session mode: $SESSION_MODE")
-    if detect_nvidia_gpu; then
-        post_install_notes+=("NVIDIA detected; installer would install $NVIDIA_DRIVER driver path and configure nvidia-drm.modeset=1.")
+    if [[ $DO_UNLINK == 1 ]]; then
+        unlink_configs
     else
-        post_install_notes+=("NVIDIA was not detected or was disabled with --no-nvidia.")
+        if [[ $DO_PACKAGES == 1 ]]; then
+            preflight
+            start_sudo
+            enable_multilib
+            system_upgrade
+            ensure_aur_helper
+            install_packages
+            configure_nvidia
+            configure_thinkpad
+            enable_services
+        fi
+        if [[ $DO_CONFIGS == 1 ]]; then
+            link_configs
+            setup_extras
+        fi
     fi
-    print_summary
-    if [ "${#failed_required[@]}" -gt 0 ]; then
+
+    summary
+    if [[ ${#fail_list[@]} -gt 0 ]]; then
         exit 1
     fi
-    exit 0
-fi
+}
 
-if [ "${#failed_required[@]}" -gt 0 ]; then
-    print_summary
-    exit 1
-fi
-
-if ! command_exists sudo; then
-    log_error "sudo is required."
-    exit 1
-fi
-
-if ! command_exists pacman; then
-    log_error "pacman is required. This installer is intended for Arch Linux."
-    exit 1
-fi
-
-if detect_nvidia_gpu; then
-    if [ "$NVIDIA_DRIVER" = "open" ]; then
-        official_required_packages+=(nvidia-open)
-    else
-        official_required_packages+=(nvidia)
-    fi
-    official_required_packages+=(nvidia-utils)
-    official_required_packages+=(lib32-nvidia-utils)
-    official_optional_packages+=(libva-nvidia-driver)
-fi
-
-log_info "Updating system"
-start_sudo_keepalive
-enable_multilib
-if ! sudo pacman -Syu --noconfirm; then
-    failed_required+=("pacman:system-upgrade")
-fi
-
-add_session_packages
-
-if pacman_package_exists xwayland-satellite; then
-    official_required_packages+=(xwayland-satellite)
-else
-    aur_required_packages+=(xwayland-satellite)
-fi
-
-install_pacman_packages "required" "${official_required_packages[@]}"
-install_pacman_packages "optional" "${official_optional_packages[@]}"
-install_aur_packages "required" "${aur_required_packages[@]}"
-
-if [ "$INSTALL_OPTIONAL_AUR" = "1" ]; then
-    install_aur_packages "optional" "${aur_optional_packages[@]}"
-else
-    for package_name in "${aur_optional_packages[@]}"; do
-        record_package_result "aur" "$package_name" "skipped_optional"
-    done
-fi
-
-log_info "Preparing dotfiles repository"
-if [ ! -d "$DOTFILES_DIR/.git" ]; then
-    if [ -e "$DOTFILES_DIR" ]; then
-        remove_path_for_replace "$DOTFILES_DIR"
-    fi
-    if ! git clone "$REPO_URL" "$DOTFILES_DIR"; then
-        failed_required+=("git:clone-dotfiles")
-    fi
-elif ! git -C "$DOTFILES_DIR" pull --ff-only; then
-    failed_required+=("git:update-dotfiles")
-fi
-
-if [ -d "$DOTFILES_DIR/config" ]; then
-    setup_symlinks
-else
-    failed_required+=("config:dotfiles-config-directory")
-fi
-
-remove_path_for_replace "$HOME/.local/share/vicinae/themes/my-new-theme.toml"
-
-log_info "Running post-install setup"
-fc-cache -fv >/dev/null 2>&1 || log_warn "fc-cache failed."
-xdg-user-dirs-update || log_warn "xdg-user-dirs-update failed."
-
-mkdir -p "$HOME/Pictures"
-cp -n "$DOTFILES_DIR/wallpapers/"* "$HOME/Pictures/" 2>/dev/null || true
-
-wallpaper_path="$HOME/Pictures/BFDF46AE-5B29-4E27-81DF-09E50E732ADE_1_102_o.jpeg"
-if [ -f "$wallpaper_path" ]; then
-    matugen image "$wallpaper_path" || log_warn "matugen failed."
-fi
-
-if [ "${APPLY_GSETTINGS:-0}" = "1" ]; then
-    gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' || log_warn "Failed to set icon theme."
-    gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Classic' || log_warn "Failed to set cursor theme."
-    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' || log_warn "Failed to set color scheme."
-else
-    post_install_notes+=("Skipped GNOME gsettings; set APPLY_GSETTINGS=1 if you explicitly want them.")
-fi
-
-enable_user_services pipewire.service pipewire-pulse.service wireplumber.service
-enable_user_services swaync.service vicinae.service
-configure_session_startup
-configure_nvidia_modeset
-
-if command_exists fish && [ "${SHELL:-}" != "$(command -v fish)" ]; then
-    if chsh -s "$(command -v fish)"; then
-        installed_successfully+=("shell:fish")
-    else
-        failed_optional+=("shell:fish")
-        post_install_notes+=("Set fish manually: chsh -s \"$(command -v fish)\"")
-    fi
-fi
-
-if [ "$SESSION_MODE" = "greetd" ]; then
-    post_install_notes+=("Reboot into greetd/tuigreet; it will start /usr/local/bin/dotfile-niri-session.")
-else
-    post_install_notes+=("Log into tty1; fish will exec niri-session for the graphical session.")
-fi
-post_install_notes+=("Verify PipeWire: pactl info; systemctl --user status pipewire pipewire-pulse wireplumber")
-post_install_notes+=("Verify portals: systemctl --user status xdg-desktop-portal xdg-desktop-portal-gtk")
-post_install_notes+=("Verify XWayland: echo \$WAYLAND_DISPLAY; echo \$DISPLAY; ps aux | grep -Ei 'xwayland|xwayland-satellite'")
-
-print_summary
-
-if [ "${#failed_required[@]}" -gt 0 ]; then
-    exit 1
-fi
-
-exit 0
+main "$@"
