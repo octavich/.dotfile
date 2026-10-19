@@ -1,0 +1,12 @@
+# Build tools and CLI utilities used by the installer and scripts.
+base-devel
+git
+curl
+wget
+jq              # niri/pick.sh
+unzip
+zip
+7zip|p7zip      # ranger: zx, archive previews
+unrar
+xdg-utils
+xdg-user-dirs

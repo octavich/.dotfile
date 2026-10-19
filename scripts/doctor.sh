@@ -1,232 +1,141 @@
 #!/usr/bin/env bash
+#
+# Post-install check for the niri desktop. Changes nothing.
+# shellcheck disable=SC2088  # "~/..." strings are only printed
 
-set -Eeuo pipefail
+set -uo pipefail
+shopt -s nullglob
 
-failed_checks=()
-warned_checks=()
+REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 
-pass() {
-    printf 'PASS: %s\n' "$*"
-}
+passes=0
+warnings=0
+failures=0
 
-warn() {
-    printf 'WARN: %s\n' "$*" >&2
-    warned_checks+=("$*")
-}
+pass() { printf '  ok    %s\n' "$*"; passes=$((passes + 1)); }
+warn() { printf '  warn  %s\n' "$*"; warnings=$((warnings + 1)); }
+fail() { printf '  FAIL  %s\n' "$*"; failures=$((failures + 1)); }
+section() { printf '\n%s\n' "$*"; }
 
-fail() {
-    printf 'FAIL: %s\n' "$*" >&2
-    failed_checks+=("$*")
-}
+has() { command -v "$1" >/dev/null 2>&1; }
 
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-check_command() {
-    local command_name=$1
-
-    if command_exists "$command_name"; then
-        pass "command exists: $command_name"
-    else
-        fail "missing command: $command_name"
-    fi
-}
-
-check_systemd_user_env() {
-    if ! command_exists systemctl; then
-        fail "systemctl is missing"
-        return
-    fi
-
-    local env_output
-    if ! env_output=$(systemctl --user show-environment 2>/dev/null); then
-        fail "systemd user environment is not available"
-        return
-    fi
-
-    local required_env=(
-        XDG_CURRENT_DESKTOP=niri
-        XDG_SESSION_DESKTOP=niri
-        XDG_SESSION_TYPE=wayland
-    )
-
-    local env_pair
-    for env_pair in "${required_env[@]}"; do
-        if grep -qx "$env_pair" <<< "$env_output"; then
-            pass "systemd user env: $env_pair"
-        else
-            fail "systemd user env missing: $env_pair"
-        fi
+check_commands() {
+    section "Programs"
+    local cmd
+    for cmd in niri niri-session noctalia xwayland-satellite fuzzel kitty foot fish starship \
+        fastfetch ranger nvim clipse jams matugen hyprpicker flameshot brightnessctl \
+        playerctl wpctl wl-copy jq yt-dlp notify-send sensors nautilus; do
+        if has "$cmd"; then pass "$cmd"; else fail "$cmd is missing"; fi
     done
-
-    if grep -q '^WAYLAND_DISPLAY=' <<< "$env_output"; then
-        pass "systemd user env has WAYLAND_DISPLAY"
-    else
-        fail "systemd user env missing WAYLAND_DISPLAY"
-    fi
-
-    if grep -q '^DISPLAY=' <<< "$env_output"; then
-        pass "systemd user env has DISPLAY"
-    else
-        warn "systemd user env has no DISPLAY; XWayland may not be active yet"
-    fi
-}
-
-check_user_service() {
-    local service_name=$1
-
-    if systemctl --user is-active --quiet "$service_name"; then
-        pass "user service active: $service_name"
-    else
-        fail "user service is not active: $service_name"
-    fi
-}
-
-check_pipewire() {
-    check_user_service pipewire.service
-    check_user_service pipewire-pulse.service
-    check_user_service wireplumber.service
-
-    if ! command_exists pactl; then
-        fail "pactl is missing"
-        return
-    fi
-
-    local pactl_info
-    if ! pactl_info=$(pactl info 2>/dev/null); then
-        fail "pactl info failed"
-        return
-    fi
-
-    if grep -q 'Server Name: PulseAudio (on PipeWire' <<< "$pactl_info"; then
-        pass "PulseAudio compatibility is served by PipeWire"
-    else
-        fail "pactl does not report PulseAudio on PipeWire"
-    fi
-}
-
-check_portals() {
-    local service_name
-    for service_name in xdg-desktop-portal.service xdg-desktop-portal-gtk.service; do
-        if systemctl --user is-failed --quiet "$service_name"; then
-            fail "portal service is failed: $service_name"
-        elif systemctl --user is-active --quiet "$service_name"; then
-            pass "portal service active: $service_name"
-        else
-            warn "portal service is not active now: $service_name; it may start on DBus activation"
-        fi
+    # Bound in niri/config.kdl; your own tools are not installed by install.sh.
+    for cmd in thfn-gtk translator-gtk calc-gtk currency-gtk /usr/local/bin/ytdl-gtk claude-desktop; do
+        if has "$cmd"; then pass "$cmd"; else warn "$cmd is missing (bound in niri)"; fi
     done
 }
 
-check_xwayland() {
-    if [ -n "${WAYLAND_DISPLAY:-}" ]; then
-        pass "WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
-    else
-        fail "WAYLAND_DISPLAY is empty"
-    fi
-
-    if [ -n "${DISPLAY:-}" ]; then
-        pass "DISPLAY=$DISPLAY"
-    else
-        warn "DISPLAY is empty; XWayland apps may not work"
-    fi
-
-    if pgrep -af 'xwayland|xwayland-satellite' >/dev/null 2>&1; then
-        pass "XWayland/xwayland-satellite process is running"
-    else
-        warn "No XWayland/xwayland-satellite process found"
-    fi
-}
-
-check_greetd() {
-    if ! command_exists systemctl; then
-        fail "systemctl is missing"
-        return
-    fi
-
-    if ! systemctl is-enabled --quiet greetd.service 2>/dev/null; then
-        warn "greetd.service is not enabled"
-        return
-    fi
-
-    if [ -x /usr/local/bin/dotfile-niri-session ]; then
-        pass "greetd niri wrapper is executable"
-    else
-        fail "missing executable greetd niri wrapper: /usr/local/bin/dotfile-niri-session"
-    fi
-
-    if [ ! -r /etc/greetd/config.toml ]; then
-        fail "missing readable greetd config: /etc/greetd/config.toml"
-        return
-    fi
-
-    if grep -q -- '--remember-session' /etc/greetd/config.toml; then
-        fail "greetd config still uses --remember-session"
-    else
-        pass "greetd config does not use --remember-session"
-    fi
-
-    if grep -q '/usr/local/bin/dotfile-niri-session' /etc/greetd/config.toml; then
-        pass "greetd config starts dotfile niri wrapper"
-    else
-        fail "greetd config does not start /usr/local/bin/dotfile-niri-session"
+check_links() {
+    section "Config symlinks"
+    local src name dst
+    for src in "$REPO_DIR"/.config/*; do
+        name=${src##*/}
+        [[ $name == archive ]] && continue
+        dst=$HOME/.config/$name
+        if [[ -L $dst && $(readlink "$dst") == "$src" ]]; then
+            pass "~/.config/$name"
+        elif [[ -e $dst ]]; then
+            fail "~/.config/$name exists but is not linked to the repo"
+        else
+            fail "~/.config/$name is missing"
+        fi
+    done
+    if has niri; then
+        if niri validate -c "$HOME/.config/niri/config.kdl" >/dev/null 2>&1; then
+            pass "niri config is valid"
+        else
+            fail "niri validate reports errors: niri validate -c ~/.config/niri/config.kdl"
+        fi
     fi
 }
 
-has_nvidia_gpu() {
-    if command_exists lspci && lspci | grep -Ei 'nvidia|3d controller|vga' | grep -qi nvidia; then
-        return 0
-    fi
+check_looks() {
+    section "Fonts, icons, cursor"
+    local family
+    for family in "Liberation Mono" "Monocraft" "Symbols Nerd Font"; do
+        if fc-list : family 2>/dev/null | grep -qi "$family"; then pass "font: $family"; else fail "font missing: $family"; fi
+    done
 
-    if [ -d /sys/bus/pci/devices ] && grep -Rqi '^0x10de$' /sys/bus/pci/devices/*/vendor 2>/dev/null; then
-        return 0
-    fi
+    local theme dir found
+    theme=$(sed -n 's/^[[:space:]]*xcursor-theme[[:space:]]*"\([^"]*\)".*/\1/p' "$REPO_DIR/.config/niri/config.kdl" | head -n 1)
+    for theme in Neuwaita "$theme"; do
+        found=""
+        for dir in "$HOME/.local/share/icons" "$HOME/.icons" /usr/share/icons; do
+            [[ -d $dir/$theme ]] && found=$dir/$theme
+        done
+        if [[ -n $found ]]; then pass "theme: $found"; else warn "theme $theme is not installed"; fi
+    done
 
-    return 1
+    local plugin
+    for plugin in ranger_devicons ranger-archives; do
+        if [[ -d $HOME/.config/ranger/plugins/$plugin ]]; then pass "ranger plugin: $plugin"; else fail "ranger plugin missing: $plugin"; fi
+    done
+    if [[ -n $(ls -A "${XDG_DATA_HOME:-$HOME/.local/share}/nvim/plugged" 2>/dev/null) ]]; then
+        pass "nvim plugins"
+    else
+        fail "nvim plugins are not installed (:PlugInstall)"
+    fi
+}
+
+check_session() {
+    section "Session"
+    local shell
+    shell=$(getent passwd "${USER:-$(id -un)}" | cut -d: -f7)
+    if [[ $shell == */fish ]]; then pass "login shell: $shell"; else warn "login shell is $shell, niri starts from fish on tty1"; fi
+
+    if [[ -z ${WAYLAND_DISPLAY:-} ]]; then
+        warn "not inside a Wayland session; skipping runtime checks"
+        return
+    fi
+    local env service
+    env=$(systemctl --user show-environment 2>/dev/null)
+    for service in XDG_CURRENT_DESKTOP=niri WAYLAND_DISPLAY; do
+        if grep -q "^$service" <<<"$env"; then pass "systemd user env: $service"; else fail "systemd user env lacks $service"; fi
+    done
+    for service in pipewire.service pipewire-pulse.service wireplumber.service; do
+        if systemctl --user is-active --quiet "$service"; then pass "$service"; else fail "$service is not running"; fi
+    done
+    for service in xdg-desktop-portal.service xdg-desktop-portal-gnome.service; do
+        if systemctl --user is-failed --quiet "$service"; then
+            fail "$service has failed"
+        else
+            pass "$service not failed"
+        fi
+    done
+    if pgrep -x noctalia >/dev/null; then pass "noctalia is running"; else fail "noctalia is not running"; fi
 }
 
 check_nvidia() {
-    if ! has_nvidia_gpu; then
-        warn "NVIDIA GPU not detected; skipping NVIDIA checks"
-        return
-    fi
-
-    if grep -qw 'nvidia-drm.modeset=1' /proc/cmdline; then
-        pass "kernel cmdline has nvidia-drm.modeset=1"
-    else
-        fail "kernel cmdline is missing nvidia-drm.modeset=1"
-    fi
-
-    local module_name
-    for module_name in nvidia nvidia_drm nvidia_modeset; do
-        if lsmod | awk '{print $1}' | grep -qx "$module_name"; then
-            pass "NVIDIA module loaded: $module_name"
-        else
-            fail "NVIDIA module missing: $module_name"
-        fi
+    local vendor found=0
+    for vendor in /sys/bus/pci/devices/*/vendor; do
+        [[ $(<"$vendor") == 0x10de ]] && found=1
     done
-}
-
-main() {
-    check_command niri-session
-    check_command awww
-    check_command awww-daemon
-    check_command xwayland-satellite
-    check_systemd_user_env
-    check_pipewire
-    check_portals
-    check_xwayland
-    check_greetd
-    check_nvidia
-
-    printf '\nDoctor summary\n'
-    printf 'Warnings: %d\n' "${#warned_checks[@]}"
-    printf 'Failures: %d\n' "${#failed_checks[@]}"
-
-    if [ "${#failed_checks[@]}" -gt 0 ]; then
-        exit 1
+    [[ $found == 1 ]] || return 0
+    section "NVIDIA"
+    local module
+    for module in nvidia nvidia_modeset nvidia_drm; do
+        if [[ -d /sys/module/$module ]]; then pass "module $module"; else fail "module $module is not loaded"; fi
+    done
+    if [[ $(cat /sys/module/nvidia_drm/parameters/modeset 2>/dev/null) == Y ]]; then
+        pass "nvidia_drm modeset=Y"
+    else
+        fail "nvidia_drm modeset is off"
     fi
 }
 
-main "$@"
+check_commands
+check_links
+check_looks
+check_session
+check_nvidia
+
+printf '\nok: %d, warnings: %d, failures: %d\n' "$passes" "$warnings" "$failures"
+[[ $failures -eq 0 ]]

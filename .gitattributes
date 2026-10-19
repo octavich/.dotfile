@@ -1,3 +1,4 @@
-*.sh text eol=lf
-install.sh text eol=lf
-config/fish/*.fish text eol=lf
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary

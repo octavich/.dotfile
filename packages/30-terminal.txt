@@ -1,0 +1,23 @@
+# Shell, terminals and console tools.
+fish
+starship
+kitty
+foot
+fastfetch
+btop
+neovim
+fzf                     # ranger: Ctrl+F
+yt-dlp                  # fuzzel/ytdl.sh
+ffmpeg
+
+ranger
+python-pillow           # ranger: image previews in kitty
+file
+atool
+ffmpegthumbnailer
+poppler
+perl-image-exiftool
+mediainfo
+python-pygments
+imagemagick
+w3m
