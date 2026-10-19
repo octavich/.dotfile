@@ -5,8 +5,11 @@ next_level() {
     case "$c" in
         auto)       [[ $d == "+" ]] && echo 0 || echo auto ;;
         disengaged) [[ $d == "+" ]] && echo auto || echo 7 ;;
-        [0-7])      n=$c; [[ $d == "+" ]] && ((++n)) || ((n--))
-                    [[ $n -eq -1 ]] && echo auto || [[ $n -eq 8 ]] && echo disengaged || echo $n ;;
+        [0-7])      if [[ $d == "+" ]]; then n=$((c + 1)); else n=$((c - 1)); fi
+                    if ((n < 0)); then echo auto
+                    elif ((n > 7)); then echo disengaged
+                    else echo "$n"
+                    fi ;;
         *)          echo "$c" ;;
     esac
 }
